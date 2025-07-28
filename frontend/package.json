@@ -1,12 +1,12 @@
 {
-  "name": "frontend",
+  "name": "gym-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -31,7 +31,7 @@
     "typescript-eslint": "^8.35.1",
     "vite": "^7.0.4"
   },
-  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "description": "This is the frontend package for the ABC Gymnastics application, built with React and Vite.",
   "main": "eslint.config.js",
   "keywords": [],
   "author": "",
