@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
-import authRoutes from "../routes/authRoutes";
-import classRoutes from "../routes/classRoutes";
-import sessionRoutes from "../routes/sessionRoutes";
+import authRoutes from "./routes/authRoutes";
+import classRoutes from "./routes/classRoutes";
+import sessionRoutes from "./routes/sessionRoutes";
 
 const app = express();
 app.use(cors());
