@@ -19,24 +19,68 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 bg-white rounded shadow-md">
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-        className="mb-4 p-2 border w-full"
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-        className="mb-4 p-2 border w-full"
-      />
-      <button type="submit" className="bg-blue-500 text-white p-2 w-full">
-        Login
-      </button>
-    </form>
+    <div className="w-full max-w-md mx-auto">
+      <form
+        onSubmit={handleSubmit}
+        className="p-8 bg-white rounded-lg shadow-lg"
+      >
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+          Account Login
+        </h2>
+
+        <div className="mb-4">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Email Address
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
+            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div className="mb-6">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
+            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition duration-200"
+        >
+          Sign In
+        </button>
+
+        <div className="mt-6 text-center text-sm">
+          <span className="text-gray-600">Don't have an account?</span>{" "}
+          <a
+            href="/register"
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Register
+          </a>
+        </div>
+      </form>
+    </div>
   );
 }
