@@ -6,9 +6,10 @@ interface ClassCardProps {
 }
 
 export default function ClassCard({ cls }: ClassCardProps) {
-  const mutation = useMutation((sessionId: number) =>
-    api.post("/sessions/book", { sessionId })
-  );
+  const mutation = useMutation({
+    mutationFn: (sessionId: number) =>
+      api.post("/sessions/book", { sessionId }),
+  });
 
   return (
     <div className="p-4 border rounded">
