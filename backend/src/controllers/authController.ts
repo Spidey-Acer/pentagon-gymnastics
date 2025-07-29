@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../../prisma/client"; // Adjust path if needed
+import { prisma } from "../lib/prisma"; // Adjust path if needed
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 

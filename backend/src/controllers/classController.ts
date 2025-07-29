@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../../prisma/client";
+import { prisma } from "../lib/prisma"; 
 
 export const getClasses = async (req: Request, res: Response) => {
   const classes = await prisma.class.findMany({ include: { sessions: true } });

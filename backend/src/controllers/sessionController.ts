@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../../prisma/client";
+import { prisma } from "../lib/prisma"; // Adjust path if needed
 
 export const bookSession = async (req: Request, res: Response) => {
   const { sessionId } = req.body;
