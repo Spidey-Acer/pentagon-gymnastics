@@ -7,6 +7,7 @@ import Register from "./pages/Register";
 import Classes from "./pages/Classes";
 import Dashboard from "./pages/Dashboard";
 import ErrorBoundary from "./components/ErrorBoundary";
+import Navbar from "./components/Navbar";
 
 // Create a client instance
 const queryClient = new QueryClient({
@@ -27,6 +28,7 @@ function App(): React.ReactElement {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Router>
+          <Navbar />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

@@ -11,6 +11,7 @@ model User {
   id       Int     @id @default(autoincrement())
   email    String  @unique
   password String
+  bookings Booking[]
 }
 
 model Class {
@@ -19,14 +20,22 @@ model Class {
   description String
   sessions    Session[]
 }
-
 model Session {
   id       Int @id @default(autoincrement())
   classId  Int
   timeSlot String // "morning", "afternoon", "evening"
   capacity Int
-  bookings Int @default(0)
+  bookingCount Int @default(0)
   class    Class @relation(fields: [classId], references: [id])
+  bookings Booking[]
 
   @@unique([classId, timeSlot])  // Consecrate the composite key
+}
+
+model Booking {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  sessionId Int
+  user      User     @relation(fields: [userId], references: [id])
+  session   Session  @relation(fields: [sessionId], references: [id])
 }
