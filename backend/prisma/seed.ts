@@ -40,7 +40,7 @@ async function main() {
           classId: createdClass.id,
           timeSlot,
           capacity: 20, // Exemplary quota; adjust as thy wisdom dictates
-          bookings: 0,
+          bookingCount: 0,
         },
       });
     }
