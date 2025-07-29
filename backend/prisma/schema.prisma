@@ -14,8 +14,8 @@ model User {
 }
 
 model Class {
-  id          Int       @id @default(autoincrement())
-  name        String
+  id          Int      @id @default(autoincrement())
+  name        String   @unique  // Bestow singularity upon name
   description String
   sessions    Session[]
 }
@@ -27,4 +27,6 @@ model Session {
   capacity Int
   bookings Int @default(0)
   class    Class @relation(fields: [classId], references: [id])
+
+  @@unique([classId, timeSlot])  // Consecrate the composite key
 }
