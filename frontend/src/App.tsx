@@ -2,16 +2,16 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "./contexts";
-import {
-  Login,
-  Register,
-  Classes,
-  Dashboard,
-  AdminDashboard,
-  LandingPage,
-} from "./pages";
-import { ProtectedRoute, ErrorBoundary, Navbar } from "./components";
+import { AuthProvider } from "./contexts/AuthContext";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Classes from "./pages/Classes";
+import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import LandingPage from "./pages/LandingPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
+import Navbar from "./components/Navbar";
 
 // Create a client instance
 const queryClient = new QueryClient({

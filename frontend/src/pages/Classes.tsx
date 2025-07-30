@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../services/api";
-import { ClassCard } from "../components";
+import ClassCard from "../components/ClassCard";
 
 export default function Classes() {
   const {
