@@ -30,10 +30,11 @@ This web application handles end-to-end business operations, from class enrollme
 - **User Registration and Authentication**: Secure sign-up and login for members, instructors, and administrators.
 - **Class Catalog and Booking System**: Browse available classes, view schedules, and book sessions with real-time availability checks.
 - **Session Management**: Administrative tools to create, update, and cancel sessions across morning, afternoon, and evening slots.
-- **Payment Integration**: Seamless handling of membership fees and class payments (integrated with standard payment gateways).
+- **Admin Dashboard**: Comprehensive analytics dashboard for gym management with user, session, and booking insights.
+- **User Management**: Admin tools to manage user roles and permissions.
+- **Capacity Management**: Real-time session capacity monitoring and adjustment capabilities.
 - **Dashboard and Analytics**: Personalized dashboards for users and analytics for gym management to track attendance, revenue, and engagement.
 - **Responsive Design**: Fully mobile-friendly interface for accessibility on desktops, tablets, and smartphones.
-- **Notification System**: Email/SMS alerts for bookings, cancellations, and promotions.
 
 ## Technologies Used
 

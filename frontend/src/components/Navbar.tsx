@@ -1,19 +1,40 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
+interface User {
+  id: number;
+  email: string;
+  role: string;
+}
+
 export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for token to determine auth status
+    // Check for token and user data to determine auth status
     const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);
+    const userData = localStorage.getItem("user");
+    
+    if (token && userData) {
+      setIsAuthenticated(true);
+      try {
+        setUser(JSON.parse(userData));
+      } catch {
+        setUser(null);
+      }
+    } else {
+      setIsAuthenticated(false);
+      setUser(null);
+    }
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setIsAuthenticated(false);
+    setUser(null);
     navigate("/login");
   };
 
@@ -64,6 +85,20 @@ export default function Navbar() {
                   >
                     Dashboard
                   </NavLink>
+                  {user?.role === "admin" && (
+                    <NavLink
+                      to="/admin"
+                      className={({ isActive }) =>
+                        `px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                          isActive
+                            ? "bg-purple-700 text-white"
+                            : "text-purple-100 hover:bg-purple-700 hover:text-white bg-purple-600"
+                        }`
+                      }
+                    >
+                      Admin
+                    </NavLink>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium text-white transition-colors duration-200"
