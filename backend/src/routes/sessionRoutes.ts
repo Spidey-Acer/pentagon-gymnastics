@@ -22,6 +22,49 @@ router.get("/booked", authenticate, async (req: Request, res: Response) => {
 });
 
 router.delete(
+  "/bookings/:id",
+  authenticate,
+  async (req: Request, res: Response) => {
+    const userId = (req as any).user.id;
+    const bookingId = parseInt(req.params.id);
+
+    try {
+      // First check if the booking exists and belongs to the user
+      const booking = await prisma.booking.findFirst({
+        where: {
+          id: bookingId,
+          userId: userId,
+        },
+        include: { session: true },
+      });
+
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+
+      // Use transaction to ensure data consistency
+      await prisma.$transaction(async (tx) => {
+        // Decrement booking count for the session
+        await tx.session.update({
+          where: { id: booking.sessionId },
+          data: { bookingCount: { decrement: 1 } },
+        });
+
+        // Delete the booking
+        await tx.booking.delete({
+          where: { id: bookingId },
+        });
+      });
+
+      res.json({ message: "Booking deleted successfully" });
+    } catch (error) {
+      console.error("Delete booking error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.delete(
   "/clear-bookings",
   authenticate,
   async (req: Request, res: Response) => {
