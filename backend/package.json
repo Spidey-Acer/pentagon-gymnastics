@@ -10,7 +10,9 @@
     "postinstall": "npx prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "production:setup": "npx prisma migrate deploy && npx prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",

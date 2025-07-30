@@ -31,14 +31,32 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.register = register;
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, password } = req.body;
-    const user = yield prisma_1.prisma.user.findUnique({ where: { email } });
-    if (user && (yield bcryptjs_1.default.compare(password, user.password))) {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password are required" });
+        }
+        const user = yield prisma_1.prisma.user.findUnique({ where: { email } });
+        if (!user || !(yield bcryptjs_1.default.compare(password, user.password))) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+        if (!process.env.JWT_SECRET) {
+            console.error("JWT_SECRET is not configured");
+            return res.status(500).json({ error: "Server configuration error" });
+        }
         const token = jsonwebtoken_1.default.sign({ id: user.id, role: user.role || "user" }, process.env.JWT_SECRET);
-        res.json({ token, user: { id: user.id, email: user.email, role: user.role || "user" } });
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role || "user"
+            }
+        });
     }
-    else {
-        res.status(401).json({ error: "Invalid credentials" });
+    catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 exports.login = login;
