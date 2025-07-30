@@ -1,6 +1,23 @@
 import { prisma } from "../src/lib/prisma";
+import bcrypt from "bcryptjs";
 
 async function main() {
+  // Create admin user
+  const adminEmail = "admin@abcgym.com";
+  const adminPassword = await bcrypt.hash("admin123", 10);
+  
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {},
+    create: {
+      email: adminEmail,
+      password: adminPassword,
+      role: "admin",
+    },
+  });
+
+  console.log("Admin user created: admin@abcgym.com / admin123");
+
   const classes = [
     { name: "Yoga", description: "Mind-body harmony through asanas." },
     { name: "Spin", description: "High-energy cycling for cardio endurance." },
