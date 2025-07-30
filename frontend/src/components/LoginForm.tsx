@@ -12,7 +12,11 @@ export default function LoginForm() {
     try {
       const { data } = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", data.token);
-      navigate("/classes");
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+      // Redirect admin users to admin dashboard, regular users to classes
+      navigate(data.user?.role === "admin" ? "/admin" : "/classes");
     } catch (error) {
       console.error("Login error:", error);
       alert("Login failed. Please check your credentials and try again.");
