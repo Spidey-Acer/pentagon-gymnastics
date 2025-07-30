@@ -1,5 +1,5 @@
 // ErrorBoundary.tsx
-import React, { Component } from "react";
+import { Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
 
 interface Props {
@@ -83,7 +83,7 @@ class ErrorBoundary extends Component<Props, State> {
           </button>
 
           {/* Show error details in development */}
-          {process.env.NODE_ENV === "development" && (
+          {import.meta.env.DEV && (
             <details style={{ marginTop: "20px", textAlign: "left" }}>
               <summary style={{ cursor: "pointer", color: "#dc3545" }}>
                 Error Details (Development Only)
