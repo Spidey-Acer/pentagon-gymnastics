@@ -8,11 +8,18 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
-  password String
-  role     String  @default("user") // "user" or "admin"
-  bookings Booking[]
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  role        String   @default("user") // "user" or "admin"
+  forename    String
+  surname     String
+  address     String
+  dateOfBirth DateTime
+  phoneNumber String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bookings    Booking[]
 }
 
 model Class {

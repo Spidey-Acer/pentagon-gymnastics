@@ -9,6 +9,7 @@ import Classes from "./pages/Classes";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import LandingPage from "./pages/LandingPage";
+import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
@@ -48,6 +49,11 @@ function App(): React.ReactElement {
                   <Dashboard />
                 </ProtectedRoute>
               } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
               <Route path="/admin" element={
                 <ProtectedRoute requireAdmin>
                   <AdminDashboard />
@@ -65,8 +71,8 @@ function App(): React.ReactElement {
 function ConditionalNavbar() {
   const location = useLocation();
   
-  // Don't show navbar on landing page
-  if (location.pathname === '/') {
+  // Don't show navbar on landing page, login, or register pages
+  if (location.pathname === '/' || location.pathname === '/login' || location.pathname === '/register') {
     return null;
   }
   
