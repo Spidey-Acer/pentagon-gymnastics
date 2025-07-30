@@ -1,41 +1,13 @@
-import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-
-interface User {
-  id: number;
-  email: string;
-  role: string;
-}
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Navbar() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check for token and user data to determine auth status
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    
-    if (token && userData) {
-      setIsAuthenticated(true);
-      try {
-        setUser(JSON.parse(userData));
-      } catch {
-        setUser(null);
-      }
-    } else {
-      setIsAuthenticated(false);
-      setUser(null);
-    }
-  }, []);
-
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setIsAuthenticated(false);
-    setUser(null);
-    navigate("/login");
+    logout();
+    navigate("/");
   };
 
   return (
