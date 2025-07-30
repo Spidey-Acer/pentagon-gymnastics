@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
-import Recommendation from "../components/Recommendation";
+import { Recommendation } from "../components";
 import { useState } from "react";
 
 interface BookingData {
