@@ -1,0 +1,14 @@
+{
+  "name": "abc-gymnastics",
+  "version": "1.0.0",
+  "description": "ABC Gymnastics Management System",
+  "scripts": {
+    "install-backend": "cd backend && npm install",
+    "build": "cd backend && npm install && npx prisma generate && npm run build",
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev"
+  },
+  "keywords": ["gymnastics", "management", "booking"],
+  "author": "Your Name",
+  "license": "MIT"
+}
