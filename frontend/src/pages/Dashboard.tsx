@@ -6,6 +6,7 @@ import { useState } from "react";
 interface BookingData {
   id: number;
   session: {
+    id: number;
     class: {
       name: string;
     };
@@ -15,6 +16,9 @@ interface BookingData {
 
 export default function Dashboard() {
   const [userPreferences] = useState<number[]>([0.5, 0.7]);
+  const [selectedBookings, setSelectedBookings] = useState<Set<number>>(
+    new Set()
+  );
   const queryClient = useQueryClient();
 
   const { data: bookedSessions, isLoading } = useQuery({
@@ -22,11 +26,11 @@ export default function Dashboard() {
     queryFn: () => api.get("/sessions/booked").then((res) => res.data),
   });
 
-  const clearBookingsMutation = useMutation({
+  const clearAllBookingsMutation = useMutation({
     mutationFn: () => api.delete("/sessions/clear-bookings"),
     onSuccess: () => {
-      // Invalidate and refetch bookings data
       queryClient.invalidateQueries({ queryKey: ["bookedSessions"] });
+      setSelectedBookings(new Set());
       alert("All bookings cleared successfully!");
     },
     onError: (error) => {
@@ -35,13 +39,64 @@ export default function Dashboard() {
     },
   });
 
-  const handleClearBookings = () => {
+  const clearSelectedBookingsMutation = useMutation({
+    mutationFn: (bookingIds: number[]) =>
+      Promise.all(
+        bookingIds.map((id) => api.delete(`/sessions/bookings/${id}`))
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookedSessions"] });
+      setSelectedBookings(new Set());
+      alert("Selected bookings cleared successfully!");
+    },
+    onError: (error) => {
+      console.error("Error clearing selected bookings:", error);
+      alert("Failed to clear selected bookings. Please try again.");
+    },
+  });
+
+  const handleClearAllBookings = () => {
     if (
       window.confirm(
         "Are you sure you want to clear all your booked sessions? This action cannot be undone."
       )
     ) {
-      clearBookingsMutation.mutate();
+      clearAllBookingsMutation.mutate();
+    }
+  };
+
+  const handleClearSelectedBookings = () => {
+    if (selectedBookings.size === 0) {
+      alert("Please select bookings to clear.");
+      return;
+    }
+
+    if (
+      window.confirm(
+        `Are you sure you want to clear ${selectedBookings.size} selected booking(s)? This action cannot be undone.`
+      )
+    ) {
+      clearSelectedBookingsMutation.mutate(Array.from(selectedBookings));
+    }
+  };
+
+  const handleBookingSelection = (bookingId: number) => {
+    const newSelection = new Set(selectedBookings);
+    if (newSelection.has(bookingId)) {
+      newSelection.delete(bookingId);
+    } else {
+      newSelection.add(bookingId);
+    }
+    setSelectedBookings(newSelection);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedBookings.size === bookedSessions?.length) {
+      setSelectedBookings(new Set());
+    } else {
+      setSelectedBookings(
+        new Set(bookedSessions?.map((booking: BookingData) => booking.id) || [])
+      );
     }
   };
 
@@ -72,44 +127,76 @@ export default function Dashboard() {
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">
                       {bookedSessions?.length || 0} active bookings
+                      {selectedBookings.size > 0 &&
+                        ` • ${selectedBookings.size} selected`}
                     </p>
                   </div>
                   {bookedSessions?.length > 0 && (
-                    <button
-                      onClick={handleClearBookings}
-                      disabled={clearBookingsMutation.isPending}
-                      className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-medium py-2 px-4 rounded-lg transition duration-200 text-sm shadow-sm"
-                    >
-                      {clearBookingsMutation.isPending ? (
-                        <span className="flex items-center">
-                          <svg
-                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          Clearing...
-                        </span>
-                      ) : (
-                        "Clear All Bookings"
+                    <div className="flex space-x-2">
+                      {selectedBookings.size > 0 && (
+                        <button
+                          onClick={handleClearSelectedBookings}
+                          disabled={clearSelectedBookingsMutation.isPending}
+                          className="bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white font-medium py-2 px-4 rounded-lg transition duration-200 text-sm shadow-sm"
+                        >
+                          {clearSelectedBookingsMutation.isPending
+                            ? "Clearing..."
+                            : `Clear Selected (${selectedBookings.size})`}
+                        </button>
                       )}
-                    </button>
+                      <button
+                        onClick={handleClearAllBookings}
+                        disabled={clearAllBookingsMutation.isPending}
+                        className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-medium py-2 px-4 rounded-lg transition duration-200 text-sm shadow-sm"
+                      >
+                        {clearAllBookingsMutation.isPending ? (
+                          <span className="flex items-center">
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            Clearing...
+                          </span>
+                        ) : (
+                          "Clear All"
+                        )}
+                      </button>
+                    </div>
                   )}
                 </div>
+                {bookedSessions?.length > 0 && (
+                  <div className="mt-4 flex items-center">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedBookings.size === bookedSessions?.length
+                        }
+                        onChange={handleSelectAll}
+                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      />
+                      <span className="ml-2 text-sm text-gray-600">
+                        Select All ({bookedSessions?.length})
+                      </span>
+                    </label>
+                  </div>
+                )}
               </div>
               <div className="p-6">
                 {bookedSessions?.length ? (
@@ -117,9 +204,19 @@ export default function Dashboard() {
                     {bookedSessions.map((booking: BookingData) => (
                       <div
                         key={booking.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100"
+                        className={`flex items-center justify-between p-4 rounded-lg border transition-colors duration-200 ${
+                          selectedBookings.has(booking.id)
+                            ? "bg-blue-50 border-blue-200"
+                            : "bg-gray-50 border-gray-100 hover:bg-gray-100"
+                        }`}
                       >
                         <div className="flex items-center space-x-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedBookings.has(booking.id)}
+                            onChange={() => handleBookingSelection(booking.id)}
+                            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                          />
                           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                             <svg
                               className="w-6 h-6 text-blue-600"
