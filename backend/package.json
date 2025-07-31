@@ -12,7 +12,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "production:setup": "npx prisma migrate deploy && npx prisma generate"
+    "production:setup": "npx prisma migrate deploy && npx prisma generate && npx prisma db seed"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
@@ -30,5 +30,8 @@
     "prisma": "^5.0.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.8.3"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }
