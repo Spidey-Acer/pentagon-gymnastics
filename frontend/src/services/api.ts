@@ -4,6 +4,7 @@ import axios from "axios";
 const baseURL = import.meta.env.VITE_API_URL || "/api";
 
 console.log("API Base URL:", baseURL); // Debug logging
+console.log("Environment:", import.meta.env.MODE); // Debug logging
 
 const api = axios.create({
   baseURL,
@@ -23,7 +24,14 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error("API Error:", error.response?.status, error.response?.data || error.message);
+    console.error("API Error Details:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      baseURL: error.config?.baseURL,
+      url: error.config?.url,
+      fullURL: `${error.config?.baseURL}${error.config?.url}`
+    });
     
     // Handle token expiration or unauthorized access
     if (error.response?.status === 401) {

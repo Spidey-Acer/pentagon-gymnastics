@@ -28,4 +28,6 @@ export default defineConfig({
   esbuild: {
     logOverride: { "this-is-undefined-in-esm": "silent" },
   },
+  // Ensure environment variables are properly handled
+  envPrefix: 'VITE_',
 });

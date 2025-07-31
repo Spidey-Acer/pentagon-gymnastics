@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "../contexts/ToastContext";
 import api from "../services/api";
 
@@ -51,12 +51,31 @@ export default function RegisterForm() {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmPassword, ...registerData } = formData;
-      await api.post("/auth/register", registerData);
+      
+      console.log("Registration attempt:", { 
+        email: registerData.email, 
+        hasPassword: !!registerData.password,
+        apiBaseURL: import.meta.env.VITE_API_URL
+      });
+      
+      const response = await api.post("/auth/register", registerData);
+      console.log("Registration successful:", response.data);
+      
       showSuccess("Registration Successful!", "Your account has been created. Please login to continue.");
       navigate("/login");
-    } catch (error) {
-      console.error("Registration error:", error);
-      showError("Registration Failed", "Unable to create account. Please try again.");
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { error?: string }, status?: number }, message?: string, config?: { url?: string } };
+      
+      console.error("Registration error details:", {
+        error,
+        response: axiosError.response?.data,
+        status: axiosError.response?.status,
+        message: axiosError.message,
+        fullURL: axiosError.config?.url
+      });
+      
+      const errorMessage = axiosError.response?.data?.error || "Unable to create account. Please try again.";
+      showError("Registration Failed", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -271,12 +290,12 @@ export default function RegisterForm() {
             </div>
 
             <div className="mt-6">
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="w-full flex justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-600 hover:bg-blue-50 transition duration-150 ease-in-out"
               >
                 Sign in to your account
-              </a>
+              </Link>
             </div>
           </div>
         </div>

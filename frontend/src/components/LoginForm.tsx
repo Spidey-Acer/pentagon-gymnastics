@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import api from "../services/api";
@@ -115,12 +115,12 @@ export default function LoginForm() {
             </div>
 
             <div className="mt-6">
-              <a
-                href="/register"
+              <Link
+                to="/register"
                 className="w-full flex justify-center py-2 px-4 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-600 hover:bg-blue-50 transition duration-150 ease-in-out"
               >
                 Create an account
-              </a>
+              </Link>
             </div>
           </div>
         </div>
