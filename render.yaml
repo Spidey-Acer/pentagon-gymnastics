@@ -1,7 +1,7 @@
 services:
   # Backend API Service
   - type: web
-    name: abc-gymnastics-backend
+    name: abc-gymnastics
     runtime: node
     rootDir: ./backend
     buildCommand: npm install && npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run build
@@ -25,7 +25,7 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        value: https://abc-gymnastics-backend.onrender.com/api
+        value: https://abc-gymnastics.onrender.com/api
 
 databases:
   - name: abc-gymnastics-db
