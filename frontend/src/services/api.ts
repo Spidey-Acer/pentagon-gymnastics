@@ -24,6 +24,14 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error("API Error:", error.response?.status, error.response?.data || error.message);
+    
+    // Handle token expiration or unauthorized access
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login"; // Redirect to login
+    }
+    
     return Promise.reject(error);
   }
 );

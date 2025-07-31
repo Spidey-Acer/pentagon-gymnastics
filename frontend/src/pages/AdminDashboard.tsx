@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
 import { useState } from "react";
+import { useToast } from "../contexts/ToastContext";
 
 interface User {
   id: number;
@@ -38,7 +39,10 @@ interface DashboardData {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "sessions">("dashboard");
+  const [editingSession, setEditingSession] = useState<number | null>(null);
+  const [tempCapacity, setTempCapacity] = useState<number>(0);
   const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
 
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery<DashboardData>({
     queryKey: ["adminDashboard"],
@@ -57,10 +61,10 @@ export default function AdminDashboard() {
       api.put(`/admin/users/${userId}/role`, { role }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
-      alert("User role updated successfully!");
+      showSuccess("Role Updated", "User role updated successfully!");
     },
     onError: () => {
-      alert("Failed to update user role");
+      showError("Update Failed", "Failed to update user role");
     },
   });
 
@@ -69,10 +73,10 @@ export default function AdminDashboard() {
       api.put(`/admin/sessions/${sessionId}/capacity`, { capacity }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminDashboard"] });
-      alert("Session capacity updated successfully!");
+      showSuccess("Success!", "Session capacity updated successfully!");
     },
     onError: (error: { response?: { data?: { error?: string } } }) => {
-      alert(`Failed to update capacity: ${error.response?.data?.error || "Unknown error"}`);
+      showError("Error", `Failed to update capacity: ${error.response?.data?.error || "Unknown error"}`);
     },
   });
 
@@ -83,8 +87,30 @@ export default function AdminDashboard() {
   };
 
   const handleCapacityChange = (sessionId: number, newCapacity: number) => {
-    if (newCapacity < 1) return;
+    if (newCapacity < 1) {
+      showError("Invalid Capacity", "Capacity must be at least 1");
+      return;
+    }
     updateCapacityMutation.mutate({ sessionId, capacity: newCapacity });
+  };
+
+  const startEditing = (sessionId: number, currentCapacity: number) => {
+    setEditingSession(sessionId);
+    setTempCapacity(currentCapacity);
+  };
+
+  const saveCapacity = (sessionId: number) => {
+    if (tempCapacity < 1) {
+      showError("Invalid Capacity", "Capacity must be at least 1");
+      return;
+    }
+    handleCapacityChange(sessionId, tempCapacity);
+    setEditingSession(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingSession(null);
+    setTempCapacity(0);
   };
 
   return (
@@ -101,7 +127,7 @@ export default function AdminDashboard() {
             {[
               { key: "dashboard", label: "Dashboard", icon: "📊" },
               { key: "users", label: "Users", icon: "👥" },
-              { key: "sessions", label: "Sessions", icon: "🏃‍♂️" },
+              { key: "sessions", label: "Sessions", icon: "📅" },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -290,14 +316,43 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex items-center space-x-4">
                         <label className="text-sm font-medium text-gray-700">Capacity:</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={session.capacity}
-                          onChange={(e) => handleCapacityChange(session.id, parseInt(e.target.value))}
-                          className="border border-gray-300 rounded px-3 py-1 w-20 text-center"
-                          disabled={updateCapacityMutation.isPending}
-                        />
+                        {editingSession === session.id ? (
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="number"
+                              min="1"
+                              value={tempCapacity}
+                              onChange={(e) => setTempCapacity(parseInt(e.target.value) || 0)}
+                              className="border border-gray-300 rounded px-3 py-1 w-20 text-center"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => saveCapacity(session.id)}
+                              disabled={updateCapacityMutation.isPending}
+                              className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              disabled={updateCapacityMutation.isPending}
+                              className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700 disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <span className="w-20 text-center font-medium">{session.capacity}</span>
+                            <button
+                              onClick={() => startEditing(session.id, session.capacity)}
+                              disabled={updateCapacityMutation.isPending}
+                              className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

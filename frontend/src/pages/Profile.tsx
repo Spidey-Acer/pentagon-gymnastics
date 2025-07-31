@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import api from "../services/api";
 
 export default function Profile() {
   const { user, login } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -37,10 +39,10 @@ export default function Profile() {
       }
       
       setIsEditing(false);
-      alert("Profile updated successfully!");
+      showSuccess("Profile Updated!", "Your profile information has been successfully updated.");
     } catch (error) {
       console.error("Profile update error:", error);
-      alert("Failed to update profile. Please try again.");
+      showError("Update Failed", "Failed to update profile. Please try again.");
     } finally {
       setLoading(false);
     }

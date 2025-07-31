@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
 import Recommendation from "../components/Recommendation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useToast } from "../contexts/ToastContext";
 
 interface BookingData {
   id: number;
@@ -20,22 +21,34 @@ export default function Dashboard() {
     new Set()
   );
   const queryClient = useQueryClient();
+  const { showSuccess, showError, showWarning } = useToast();
 
-  const { data: bookedSessions, isLoading } = useQuery({
+  const { data: bookedSessions, isLoading, refetch } = useQuery({
     queryKey: ["bookedSessions"],
     queryFn: () => api.get("/sessions/booked").then((res) => res.data),
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchIntervalInBackground: true, // Continue refreshing in background
   });
+
+  // Additional manual refresh on component mount and periodic intervals
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [refetch]);
 
   const clearAllBookingsMutation = useMutation({
     mutationFn: () => api.delete("/sessions/clear-bookings"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookedSessions"] });
       setSelectedBookings(new Set());
-      alert("All bookings cleared successfully!");
+      showSuccess("Bookings Cleared", "All bookings cleared successfully!");
     },
     onError: (error) => {
       console.error("Error clearing bookings:", error);
-      alert("Failed to clear bookings. Please try again.");
+      showError("Clear Failed", "Failed to clear bookings. Please try again.");
     },
   });
 
@@ -47,11 +60,11 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookedSessions"] });
       setSelectedBookings(new Set());
-      alert("Selected bookings cleared successfully!");
+      showSuccess("Selected Cleared", "Selected bookings cleared successfully!");
     },
     onError: (error) => {
       console.error("Error clearing selected bookings:", error);
-      alert("Failed to clear selected bookings. Please try again.");
+      showError("Clear Failed", "Failed to clear selected bookings. Please try again.");
     },
   });
 
@@ -67,7 +80,7 @@ export default function Dashboard() {
 
   const handleClearSelectedBookings = () => {
     if (selectedBookings.size === 0) {
-      alert("Please select bookings to clear.");
+      showWarning("No Selection", "Please select bookings to clear.");
       return;
     }
 
@@ -111,8 +124,16 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-2 text-gray-600">Manage your fitness journey</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <p className="mt-2 text-gray-600">Manage your fitness journey</p>
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className="animate-pulse h-2 w-2 bg-green-500 rounded-full"></div>
+              <span>Auto-refreshing every 5s</span>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
