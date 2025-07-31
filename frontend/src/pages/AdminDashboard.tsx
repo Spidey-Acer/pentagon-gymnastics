@@ -44,11 +44,14 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useToast();
 
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery<DashboardData>({
-    queryKey: ["adminDashboard"],
-    queryFn: () => api.get("/admin/dashboard").then((res) => res.data),
-    enabled: activeTab === "dashboard",
-  });
+  const { data: dashboardData, isLoading: dashboardLoading } =
+    useQuery<DashboardData>({
+      queryKey: ["adminDashboard"],
+      queryFn: () => api.get("/admin/dashboard").then((res) => res.data),
+      enabled: activeTab === "dashboard" || activeTab === "sessions",
+      refetchInterval: activeTab === "sessions" ? 2000 : 0, // Auto-refresh sessions tab every 2 seconds
+      refetchIntervalInBackground: true,
+    });
 
   const { data: users, isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ["adminUsers"],
@@ -69,19 +72,43 @@ export default function AdminDashboard() {
   });
 
   const updateCapacityMutation = useMutation({
-    mutationFn: ({ sessionId, capacity }: { sessionId: number; capacity: number }) =>
-      api.put(`/admin/sessions/${sessionId}/capacity`, { capacity }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminDashboard"] });
+    mutationFn: ({
+      sessionId,
+      capacity,
+    }: {
+      sessionId: number;
+      capacity: number;
+    }) => {
+      console.log(`Updating session ${sessionId} to capacity ${capacity}`);
+      return api.put(`/admin/sessions/${sessionId}/capacity`, { capacity });
+    },
+    onSuccess: (data) => {
+      console.log("Capacity update successful:", data);
+      // Add a small delay before invalidating queries to ensure DB is updated
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["adminDashboard"] });
+        queryClient.refetchQueries({ queryKey: ["adminDashboard"] });
+      }, 100);
+      setEditingSession(null); // Reset editing state on success
       showSuccess("Success!", "Session capacity updated successfully!");
     },
     onError: (error: { response?: { data?: { error?: string } } }) => {
-      showError("Error", `Failed to update capacity: ${error.response?.data?.error || "Unknown error"}`);
+      console.error("Capacity update failed:", error);
+      showError(
+        "Error",
+        `Failed to update capacity: ${
+          error.response?.data?.error || "Unknown error"
+        }`
+      );
     },
   });
 
   const handleRoleChange = (userId: number, newRole: string) => {
-    if (window.confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+    if (
+      window.confirm(
+        `Are you sure you want to change this user's role to ${newRole}?`
+      )
+    ) {
       updateUserRoleMutation.mutate({ userId, role: newRole });
     }
   };
@@ -104,8 +131,8 @@ export default function AdminDashboard() {
       showError("Invalid Capacity", "Capacity must be at least 1");
       return;
     }
+    // Don't reset editing state here - let the mutation success handler do it
     handleCapacityChange(sessionId, tempCapacity);
-    setEditingSession(null);
   };
 
   const cancelEditing = () => {

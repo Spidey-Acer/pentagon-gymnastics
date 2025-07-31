@@ -23,10 +23,14 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { showSuccess, showError, showWarning } = useToast();
 
-  const { data: bookedSessions, isLoading, refetch } = useQuery({
+  const {
+    data: bookedSessions,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["bookedSessions"],
     queryFn: () => api.get("/sessions/booked").then((res) => res.data),
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 2000, // Auto-refresh every 2 seconds
     refetchIntervalInBackground: true, // Continue refreshing in background
   });
 
@@ -34,7 +38,7 @@ export default function Dashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       refetch();
-    }, 5000);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [refetch]);
@@ -60,11 +64,17 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookedSessions"] });
       setSelectedBookings(new Set());
-      showSuccess("Selected Cleared", "Selected bookings cleared successfully!");
+      showSuccess(
+        "Selected Cleared",
+        "Selected bookings cleared successfully!"
+      );
     },
     onError: (error) => {
       console.error("Error clearing selected bookings:", error);
-      showError("Clear Failed", "Failed to clear selected bookings. Please try again.");
+      showError(
+        "Clear Failed",
+        "Failed to clear selected bookings. Please try again."
+      );
     },
   });
 
@@ -131,7 +141,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <div className="animate-pulse h-2 w-2 bg-green-500 rounded-full"></div>
-              <span>Auto-refreshing every 5s</span>
+              <span>Auto-refreshing every 2s</span>
             </div>
           </div>
         </div>

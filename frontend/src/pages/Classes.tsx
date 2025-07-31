@@ -12,7 +12,7 @@ export default function Classes() {
   } = useQuery({
     queryKey: ["classes"],
     queryFn: () => api.get("/classes").then((res) => res.data),
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 2000, // Auto-refresh every 2 seconds
     refetchIntervalInBackground: true, // Continue refreshing in background
   });
 
@@ -20,7 +20,7 @@ export default function Classes() {
   useEffect(() => {
     const interval = setInterval(() => {
       refetch();
-    }, 5000);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [refetch]);
@@ -59,7 +59,9 @@ export default function Classes() {
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Fitness Classes</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Fitness Classes
+              </h1>
               <p className="mt-2 text-gray-600">
                 Choose from our diverse selection of fitness classes designed to
                 help you achieve your goals
@@ -67,7 +69,7 @@ export default function Classes() {
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <div className="animate-pulse h-2 w-2 bg-green-500 rounded-full"></div>
-              <span>Auto-refreshing every 5s</span>
+              <span>Auto-refreshing every 2s</span>
             </div>
           </div>
         </div>
