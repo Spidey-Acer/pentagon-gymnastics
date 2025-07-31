@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../contexts/ToastContext";
 import api from "../services/api";
 
 export default function RegisterForm() {
@@ -15,6 +16,7 @@ export default function RegisterForm() {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -27,12 +29,12 @@ export default function RegisterForm() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      showError("Password Mismatch", "Passwords do not match!");
       return;
     }
 
     if (formData.password.length < 6) {
-      alert("Password must be at least 6 characters long!");
+      showError("Invalid Password", "Password must be at least 6 characters long!");
       return;
     }
 
@@ -41,7 +43,7 @@ export default function RegisterForm() {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     if (age < 16) {
-      alert("You must be at least 16 years old to register!");
+      showError("Age Restriction", "You must be at least 16 years old to register!");
       return;
     }
 
@@ -50,11 +52,11 @@ export default function RegisterForm() {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmPassword, ...registerData } = formData;
       await api.post("/auth/register", registerData);
-      alert("Registration successful! Please login.");
+      showSuccess("Registration Successful!", "Your account has been created. Please login to continue.");
       navigate("/login");
     } catch (error) {
       console.error("Registration error:", error);
-      alert("Registration failed. Please try again.");
+      showError("Registration Failed", "Unable to create account. Please try again.");
     } finally {
       setLoading(false);
     }

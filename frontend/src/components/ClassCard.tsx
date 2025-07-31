@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
+import { useToast } from "../contexts/ToastContext";
 
 interface ClassCardProps {
   cls: {
@@ -40,19 +41,20 @@ const getTimeSlotDisplay = (timeSlot: string) => {
 
 export default function ClassCard({ cls }: ClassCardProps) {
   const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
   const mutation = useMutation({
     mutationFn: (sessionId: number) =>
       api.post("/sessions/book", { sessionId }).then((res) => res.data),
     onSuccess: () => {
       // Invalidate classes query to refresh session data
       queryClient.invalidateQueries({ queryKey: ["classes"] });
-      alert("Booking successful!");
+      showSuccess("Booking Successful!", "Your session has been booked successfully.");
     },
     onError: (error: Error | { response?: { data?: { error?: string } } }) => {
       const errorMessage =
         (error as { response?: { data?: { error?: string } } })?.response?.data
           ?.error || "Unknown error";
-      alert(`Booking failed: ${errorMessage}`);
+      showError("Booking Failed", errorMessage);
     },
   });
 

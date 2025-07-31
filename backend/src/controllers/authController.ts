@@ -161,3 +161,16 @@ export const updateProfile = async (req: Request, res: Response) => {
     }
   }
 };
+
+// Validate token endpoint
+export const validateToken = async (req: Request, res: Response) => {
+  try {
+    // If the middleware passed, the token is valid
+    // Return user info from the token
+    const user = (req as any).user;
+    res.json({ valid: true, user });
+  } catch (error) {
+    console.error("Token validation error:", error);
+    res.status(401).json({ error: "Invalid token" });
+  }
+};

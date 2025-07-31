@@ -46,6 +46,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         setIsAuthenticated(true);
+        
+        // Validate token by making a simple API call
+        import('../services/api').then(({ default: api }) => {
+          api.get('/auth/validate')
+            .catch(() => {
+              // Token is invalid, clear everything
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              setUser(null);
+              setIsAuthenticated(false);
+            });
+        });
       } catch {
         // Invalid user data, clear everything
         localStorage.removeItem('token');

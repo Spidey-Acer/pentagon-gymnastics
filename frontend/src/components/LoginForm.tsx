@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import api from "../services/api";
 
 export default function LoginForm() {
@@ -8,17 +9,19 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const { data } = await api.post("/auth/login", { email, password });
       login(data.token, data.user);
+      showSuccess("Welcome Back!", `Successfully logged in as ${data.user?.forename || 'User'}`);
       // Redirect admin users to admin dashboard, regular users to classes
       navigate(data.user?.role === "admin" ? "/admin" : "/classes");
     } catch (error) {
       console.error("Login error:", error);
-      alert("Login failed. Please check your credentials and try again.");
+      showError("Login Failed", "Please check your credentials and try again.");
     }
   };
 
