@@ -9,7 +9,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": "https://abc-gymnastics.onrender.com",
+      "/api": "http://localhost:5000",
     },
   },
   build: {
