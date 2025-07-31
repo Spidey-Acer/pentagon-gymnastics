@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateProfile = exports.login = exports.register = void 0;
+exports.validateToken = exports.updateProfile = exports.login = exports.register = void 0;
 const prisma_1 = require("../lib/prisma"); // Adjust path if needed
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -161,3 +161,17 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.updateProfile = updateProfile;
+// Validate token endpoint
+const validateToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // If the middleware passed, the token is valid
+        // Return user info from the token
+        const user = req.user;
+        res.json({ valid: true, user });
+    }
+    catch (error) {
+        console.error("Token validation error:", error);
+        res.status(401).json({ error: "Invalid token" });
+    }
+});
+exports.validateToken = validateToken;

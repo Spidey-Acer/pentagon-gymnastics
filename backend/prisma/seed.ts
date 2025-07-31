@@ -13,6 +13,11 @@ async function main() {
       email: adminEmail,
       password: adminPassword,
       role: "admin",
+      forename: "Admin",
+      surname: "User", 
+      address: "123 Gym Street",
+      dateOfBirth: new Date("1990-01-01"),
+      phoneNumber: "555-0123",
     },
   });
 
@@ -69,7 +74,7 @@ async function main() {
 main()
   .catch((e) => {
     console.error(e);
-    process.exit(1);
+    throw e;
   })
   .finally(async () => {
     await prisma.$disconnect();
