@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 async function main() {
   // Create admin user
-  const adminEmail = "admin@Pentagongym.com";
+  const adminEmail = "admin@pentagongym.com";
   const adminPassword = await bcrypt.hash("admin123", 10);
 
   await prisma.user.upsert({
@@ -21,7 +21,7 @@ async function main() {
     },
   });
 
-  console.log("Admin user created: admin@Pentagongym.com / admin123");
+  console.log("Admin user created: admin@pentagongym.com / admin123");
 
   const classes = [
     { name: "Yoga", description: "Mind-body harmony through asanas." },
@@ -74,13 +74,14 @@ async function main() {
   const packages = [
     {
       name: "Premium",
-      description: "All fitness classes with priority access and premium facilities",
+      description:
+        "All fitness classes with priority access and premium facilities",
       price: 100.0,
       maxClasses: null, // Unlimited
       priority: 3,
     },
     {
-      name: "Standard", 
+      name: "Standard",
       description: "Choose any 3 fitness classes from our selection",
       price: 70.0,
       maxClasses: 3,
@@ -88,7 +89,7 @@ async function main() {
     },
     {
       name: "Basic",
-      description: "Choose any 2 fitness classes from our selection", 
+      description: "Choose any 2 fitness classes from our selection",
       price: 50.0,
       maxClasses: 2,
       priority: 1,
@@ -108,9 +109,9 @@ async function main() {
   const premiumPackage = await prisma.package.findUnique({
     where: { name: "Premium" },
   });
-  
+
   const allClasses = await prisma.class.findMany();
-  
+
   if (premiumPackage) {
     for (const class_ of allClasses) {
       await prisma.packageClass.upsert({
@@ -137,13 +138,14 @@ async function main() {
       price: 30.0,
     },
     {
-      name: "Pentagon Gym Shorts", 
+      name: "Pentagon Gym Shorts",
       description: "Comfortable shorts with Pentagon Gymnastics branding",
       price: 30.0,
     },
     {
       name: "Pentagon Gym Trousers",
-      description: "Full-length training trousers with Pentagon Gymnastics logo",
+      description:
+        "Full-length training trousers with Pentagon Gymnastics logo",
       price: 30.0,
     },
   ];
@@ -152,7 +154,7 @@ async function main() {
     const existingGear = await prisma.gearItem.findFirst({
       where: { name: gearData.name },
     });
-    
+
     if (!existingGear) {
       await prisma.gearItem.create({
         data: gearData,
@@ -161,10 +163,14 @@ async function main() {
   }
 
   console.log("✅ Database seeded successfully!");
-  console.log("📦 Created packages: Premium (£100), Standard (£70), Basic (£50)");
+  console.log(
+    "📦 Created packages: Premium (£100), Standard (£70), Basic (£50)"
+  );
   console.log("👕 Created gear items: Vest, Shorts, Trousers (£30 each)");
-  console.log("🏃‍♀️ Created 8 fitness classes with morning, afternoon, evening sessions");
-  console.log("👨‍💼 Admin login: admin@Pentagongym.com / admin123");
+  console.log(
+    "🏃‍♀️ Created 8 fitness classes with morning, afternoon, evening sessions"
+  );
+  console.log("👨‍💼 Admin login: admin@pentagongym.com / admin123");
 }
 
 main()
