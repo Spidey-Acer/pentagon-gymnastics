@@ -8,18 +8,21 @@ datasource db {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
-  role        String   @default("user") // "user" or "admin"
-  forename    String
-  surname     String
-  address     String
-  dateOfBirth DateTime
-  phoneNumber String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  bookings    Booking[]
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  password        String
+  role            String   @default("user") // "user" or "admin"
+  forename        String
+  surname         String
+  address         String
+  dateOfBirth     DateTime
+  phoneNumber     String
+  stripeCustomerId String?  // Stripe customer ID
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  bookings        Booking[]
+  subscriptions   Subscription[]
+  gearOrders      GearOrder[]
 }
 
 model Class {
@@ -27,6 +30,7 @@ model Class {
   name        String   @unique  // Bestow singularity upon name
   description String
   sessions    Session[]
+  packageClasses PackageClass[]
 }
 model Session {
   id       Int @id @default(autoincrement())
@@ -46,4 +50,106 @@ model Booking {
   sessionId Int
   user      User     @relation(fields: [userId], references: [id])
   session   Session  @relation(fields: [sessionId], references: [id])
+}
+
+// Package Management Models
+model Package {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique // "Premium", "Standard", "Basic"
+  description     String
+  price           Float    // Monthly price in pounds
+  maxClasses      Int?     // null for unlimited (Package 1)
+  priority        Int      @default(0) // Higher number = higher priority
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  subscriptions   Subscription[]
+  packageClasses  PackageClass[]
+}
+
+model PackageClass {
+  id        Int     @id @default(autoincrement())
+  packageId Int
+  classId   Int
+  package   Package @relation(fields: [packageId], references: [id])
+  class     Class   @relation(fields: [classId], references: [id])
+
+  @@unique([packageId, classId])
+}
+
+// Subscription Management
+model Subscription {
+  id                    Int      @id @default(autoincrement())
+  userId                Int
+  packageId             Int
+  stripeSubscriptionId  String?  // Stripe subscription ID
+  status                String   // "active", "cancelled", "past_due", "pending"
+  startDate             DateTime
+  endDate               DateTime
+  proteinSupplement     Boolean  @default(false)
+  proteinSupplementPrice Float   @default(50.0) // £50 for 30 days
+  isAutoRenew           Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id])
+  package               Package  @relation(fields: [packageId], references: [id])
+  payments              Payment[]
+
+  @@unique([userId]) // One active subscription per user
+}
+
+// Payment Tracking
+model Payment {
+  id                   Int          @id @default(autoincrement())
+  subscriptionId       Int?
+  gearOrderId          Int?
+  stripePaymentIntentId String?     // Stripe payment intent ID
+  amount               Float        // Total amount in pounds
+  currency             String       @default("gbp")
+  status               String       // "pending", "succeeded", "failed"
+  paymentType          String       // "subscription", "gear", "upgrade"
+  description          String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  subscription         Subscription? @relation(fields: [subscriptionId], references: [id])
+  gearOrder            GearOrder?   @relation(fields: [gearOrderId], references: [id])
+}
+
+// Fitness Gear Store
+model GearItem {
+  id          Int      @id @default(autoincrement())
+  name        String   // "Vest", "Shorts", "Trousers"
+  description String
+  price       Float    @default(30.0) // £30 per item
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  gearOrderItems GearOrderItem[]
+}
+
+model GearOrder {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  stripePaymentIntentId String? // Stripe payment intent ID
+  totalAmount     Float
+  status          String   // "pending", "paid", "processing", "shipped", "delivered"
+  customerName    String   // For customization
+  shippingAddress String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+  items           GearOrderItem[]
+  payments        Payment[]
+}
+
+model GearOrderItem {
+  id          Int      @id @default(autoincrement())
+  gearOrderId Int
+  gearItemId  Int
+  size        String   // "XS", "S", "M", "L", "XL", "XXL"
+  quantity    Int
+  unitPrice   Float
+  customText  String?  // Customer name for customization
+  gearOrder   GearOrder @relation(fields: [gearOrderId], references: [id])
+  gearItem    GearItem  @relation(fields: [gearItemId], references: [id])
 }

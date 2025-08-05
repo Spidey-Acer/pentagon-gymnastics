@@ -1,7 +1,7 @@
 services:
   # Backend API Service
   - type: web
-    name: abc-gymnastics
+    name: Pentagon-gymnastics
     runtime: node
     rootDir: ./backend
     buildCommand: npm install && npm run production:setup && npm run build
@@ -11,23 +11,23 @@ services:
         value: production
       - key: DATABASE_URL
         fromDatabase:
-          name: abc-gymnastics-db
+          name: Pentagon-gymnastics-db
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
 
   # Frontend Static Site
   - type: web
-    name: abc-gymnastics-frontend
+    name: Pentagon-gymnastics-frontend
     runtime: static
     rootDir: ./frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        value: https://abc-gymnastics.onrender.com/api
+        value: https://Pentagon-gymnastics.onrender.com/api
 
 databases:
-  - name: abc-gymnastics-db
-    databaseName: abc_gymnastics
+  - name: Pentagon-gymnastics-db
+    databaseName: Pentagon_gymnastics
     user: postgres

@@ -1,7 +1,7 @@
 {
-  "name": "abc-gymnastics",
+  "name": "Pentagon-gymnastics",
   "version": "1.0.0",
-  "description": "ABC Gymnastics Management System",
+  "description": "Pentagon Gymnastics Management System",
   "scripts": {
     "install-backend": "cd backend && npm install",
     "install-frontend": "cd frontend && npm install",
@@ -10,7 +10,11 @@
     "start": "cd backend && npm start",
     "dev": "cd backend && npm run dev"
   },
-  "keywords": ["gymnastics", "management", "booking"],
+  "keywords": [
+    "gymnastics",
+    "management",
+    "booking"
+  ],
   "author": "Your Name",
   "license": "MIT"
 }

@@ -94,7 +94,7 @@ export default function RegisterForm() {
           </svg>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Join ABC Gymnastics
+          Join Pentagon Gymnastics
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Create your account and start your fitness journey
@@ -106,7 +106,10 @@ export default function RegisterForm() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="forename" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="forename"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   First Name
                 </label>
                 <input
@@ -122,7 +125,10 @@ export default function RegisterForm() {
               </div>
 
               <div>
-                <label htmlFor="surname" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="surname"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Last Name
                 </label>
                 <input
@@ -139,7 +145,10 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email Address
               </label>
               <input
@@ -156,7 +165,10 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="phoneNumber"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Phone Number
               </label>
               <input
@@ -172,7 +184,10 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="dateOfBirth"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Date of Birth
               </label>
               <input
@@ -184,11 +199,16 @@ export default function RegisterForm() {
                 onChange={handleChange}
                 className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
-              <p className="mt-1 text-xs text-gray-500">You must be at least 16 years old</p>
+              <p className="mt-1 text-xs text-gray-500">
+                You must be at least 16 years old
+              </p>
             </div>
 
             <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="address"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Address
               </label>
               <input
@@ -204,7 +224,10 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <input
@@ -224,7 +247,10 @@ export default function RegisterForm() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Confirm Password
               </label>
               <input

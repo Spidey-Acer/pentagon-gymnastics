@@ -1,14 +1,14 @@
-# ABC Gymnastics Web Application
+# Pentagon Gymnastics Web Application
 
 ## Overview
 
-This repository contains the source code for a comprehensive web application developed for ABC Gymnastics, a burgeoning gym company poised to enter the fitness market with an exceptional array of offerings. As a professional software design and development project, this platform serves as a centralized business hub, streamlining all operational processes and facilitating seamless interactions between the gym, its instructors, and clientele. The application is meticulously crafted to align with the client's specifications, leveraging technologies covered in the Software Design and Development module at Ravensbourne University London.
+This repository contains the source code for a comprehensive web application developed for Pentagon Gymnastics, a burgeoning gym company poised to enter the fitness market with an exceptional array of offerings. As a professional software design and development project, this platform serves as a centralized business hub, streamlining all operational processes and facilitating seamless interactions between the gym, its instructors, and clientele. The application is meticulously crafted to align with the client's specifications, leveraging technologies covered in the Software Design and Development module at Ravensbourne University London.
 
 The core objective is to provide an intuitive, user-friendly interface that manages fitness class bookings, session scheduling, member registrations, and administrative tasks, thereby enhancing operational efficiency and user satisfaction.
 
 ## Project Description
 
-ABC Gymnastics aims to distinguish itself by offering a diverse selection of fitness classes, including:
+Pentagon Gymnastics aims to distinguish itself by offering a diverse selection of fitness classes, including:
 - Yoga
 - Spin
 - Boot Camp
@@ -73,8 +73,8 @@ This project is built using a modern web development stack:
 
 1. **Clone the Repository**:
   ```bash
-  git clone https://github.com/yourusername/ABC-Gymnastics.git
-  cd ABC-Gymnastics/frontend
+  git clone https://github.com/yourusername/Pentagon-Gymnastics.git
+  cd Pentagon-Gymnastics/frontend
   ```
 
 2. **Install Dependencies**:
@@ -110,7 +110,7 @@ This project is built using a modern web development stack:
   Create a `.env` file in the backend directory:
   ```
   PORT=5000
-  DATABASE_URL="postgresql://username:password@localhost:5432/abc_gymnastics"
+  DATABASE_URL="postgresql://username:password@localhost:5432/Pentagon_gymnastics"
   JWT_SECRET=your_jwt_secret_key_here_make_it_long_and_secure
   ```
 
@@ -133,7 +133,7 @@ This project is built using a modern web development stack:
    ```bash
    # Connect to PostgreSQL and create database
    psql -h localhost -U postgres
-   CREATE DATABASE abc_gymnastics;
+   CREATE DATABASE Pentagon_gymnastics;
    \q
    ```
 
@@ -196,18 +196,18 @@ This project is built using a modern web development stack:
    ```bash
    # Open Prisma Studio
    npx prisma studio
-   # Navigate to User table and look for admin@abcgym.com
+   # Navigate to User table and look for admin@Pentagongym.com
    ```
 
 4. **Manual Admin User Creation**:
    If seeding fails, create admin user manually:
    ```bash
    # Connect to your database
-   psql -h localhost -U postgres -d abc_gymnastics
+   psql -h localhost -U postgres -d Pentagon_gymnastics
    
    # Insert admin user (password is hashed version of "admin123")
    INSERT INTO "User" (email, password, role) 
-   VALUES ('admin@abcgym.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+   VALUES ('admin@Pentagongym.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
    ```
 
 #### Problem: "Prisma Client not generated"
@@ -224,11 +224,11 @@ npm run build
 **Solution:**
 ```bash
 # Create database manually
-createdb abc_gymnastics -h localhost -U postgres
+createdb Pentagon_gymnastics -h localhost -U postgres
 
 # Or using psql
 psql -h localhost -U postgres
-CREATE DATABASE abc_gymnastics;
+CREATE DATABASE Pentagon_gymnastics;
 \q
 
 # Then run migrations
@@ -245,7 +245,7 @@ npx prisma migrate dev
 
 2. Verify your `.env` DATABASE_URL format:
    ```
-   DATABASE_URL="postgresql://username:password@localhost:5432/abc_gymnastics"
+   DATABASE_URL="postgresql://username:password@localhost:5432/Pentagon_gymnastics"
    ```
 
 3. Test database connection:
@@ -258,7 +258,7 @@ npx prisma migrate dev
 After successful seeding, use these credentials to login:
 
 **🔑 Admin Login:**
-- **Email**: `admin@abcgym.com`
+- **Email**: `admin@Pentagongym.com`
 - **Password**: `admin123`
 
 **📝 Available User Roles:**

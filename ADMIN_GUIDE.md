@@ -1,4 +1,4 @@
-# 🔑 ABC Gymnastics Admin Guide
+# 🔑 Pentagon Gymnastics Admin Guide
 
 ## 👤 Admin Account Setup
 
@@ -16,7 +16,7 @@
    ```
 
 #### **Default Admin Credentials (if seeded):**
-- **Email**: `admin@abcgym.com`
+- **Email**: `admin@Pentagongym.com`
 - **Password**: `admin123`
 
 ⚠️ **CHANGE THESE CREDENTIALS IMMEDIATELY IN PRODUCTION!**

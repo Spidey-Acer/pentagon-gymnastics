@@ -35,7 +35,7 @@
     "typescript-eslint": "^8.35.1",
     "vite": "^7.0.4"
   },
-  "description": "This is the frontend package for the ABC Gymnastics application, built with React and Vite.",
+  "description": "This is the frontend package for the Pentagon Gymnastics application, built with React and Vite.",
   "main": "eslint.config.js",
   "keywords": [],
   "author": "",

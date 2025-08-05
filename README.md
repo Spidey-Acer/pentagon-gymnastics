@@ -1,14 +1,14 @@
-# ABC Gymnastics Web Application
+# Pentagon Gymnastics Web Application
 
 ## Overview
 
-This repository contains the source code for a comprehensive web application developed for ABC Gymnastics, a burgeoning gym company poised to enter the fitness market with an exceptional array of offerings. As a professional software design and development project, this platform serves as a centralized business hub, streamlining all operational processes and facilitating seamless interactions between the gym, its instructors, and clientele. The application is meticulously crafted to align with the client's specifications, leveraging technologies covered in the Software Design and Development module at Ravensbourne University London.
+This repository contains the source code for a comprehensive web application developed for Pentagon Gymnastics, a burgeoning gym company poised to enter the fitness market with an exceptional array of offerings. As a professional software design and development project, this platform serves as a centralized business hub, streamlining all operational processes and facilitating seamless interactions between the gym, its instructors, and clientele. The application is meticulously crafted to align with the client's specifications, leveraging technologies covered in the Software Design and Development module at Ravensbourne University London.
 
 The core objective is to provide an intuitive, user-friendly interface that manages fitness class bookings, session scheduling, member registrations, and administrative tasks, thereby enhancing operational efficiency and user satisfaction.
 
 ## Project Description
 
-ABC Gymnastics aims to distinguish itself by offering a diverse selection of fitness classes, including:
+Pentagon Gymnastics aims to distinguish itself by offering a diverse selection of fitness classes, including:
 - Yoga
 - Spin
 - Boot Camp
@@ -74,7 +74,7 @@ If no admin user exists, you need to create one manually. Connect to your Render
 2. **Create Admin User**:
    ```sql
    INSERT INTO "User" (email, password, role) 
-   VALUES ('admin@abcgym.com', '$2b$10$example_hashed_password', 'admin');
+   VALUES ('admin@Pentagongym.com', '$2b$10$example_hashed_password', 'admin');
    ```
 
 3. **Hash Password Locally** (to get proper bcrypt hash):

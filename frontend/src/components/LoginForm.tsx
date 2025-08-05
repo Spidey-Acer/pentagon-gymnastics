@@ -41,7 +41,7 @@ export default function LoginForm() {
           Welcome back
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Sign in to your ABC Gymnastics account
+          Sign in to your Pentagon Gymnastics account
         </p>
       </div>
 
@@ -109,7 +109,7 @@ export default function LoginForm() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  New to ABC Gymnastics?
+                  New to Pentagon Gymnastics?
                 </span>
               </div>
             </div>
