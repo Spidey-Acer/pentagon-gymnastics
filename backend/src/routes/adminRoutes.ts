@@ -7,7 +7,12 @@ import {
   updateUserRole,
   getAllBookings,
   updateSessionCapacity,
-  deleteClass
+  deleteClass,
+  getAnalyticsReport,
+  getFinancialOverview,
+  getEquipmentManagement,
+  updateGearItem,
+  updateOrderStatus
 } from "../controllers/adminController";
 
 const router = Router();
@@ -17,6 +22,11 @@ router.use(authenticate, requireAdmin);
 
 // Dashboard analytics
 router.get("/dashboard", getAdminDashboard);
+
+// Comprehensive analytics and reporting
+router.get("/analytics", getAnalyticsReport);
+router.get("/financial", getFinancialOverview);
+router.get("/equipment", getEquipmentManagement);
 
 // User management
 router.get("/users", getAllUsers);
@@ -30,5 +40,9 @@ router.put("/sessions/:sessionId/capacity", updateSessionCapacity);
 
 // Class management
 router.delete("/classes/:classId", deleteClass);
+
+// Equipment management
+router.put("/gear/:itemId", updateGearItem);
+router.put("/orders/:orderId/status", updateOrderStatus);
 
 export default router;

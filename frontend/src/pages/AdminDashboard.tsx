@@ -37,10 +37,102 @@ interface DashboardData {
   }>;
 }
 
+interface AnalyticsData {
+  reportPeriod: { startDate: string; endDate: string };
+  summary: {
+    totalIncome: number;
+    totalPayments: number;
+    totalEquipmentRevenue: number;
+    totalCustomers: number;
+  };
+  customersByPackage: Array<{
+    package: { name: string; price: number };
+    customerCount: number;
+    proteinSupplementRevenue: number;
+  }>;
+  incomeBreakdown: {
+    subscriptionRevenue: number;
+    equipmentRevenue: number;
+    proteinSupplementRevenue: number;
+  };
+  equipmentAnalysis: {
+    totalOrders: number;
+    totalRevenue: number;
+    popularItems: Array<{ name: string; quantity: number; revenue: number }>;
+  };
+  topCustomers: Array<{
+    user: { email: string; name: string };
+    totalSpending: number;
+    subscriptionSpending: number;
+    gearSpending: number;
+  }>;
+  recentOrders: Array<{
+    id: number;
+    customer: string;
+    email: string;
+    totalAmount: number;
+    status: string;
+    createdAt: string;
+    itemCount: number;
+  }>;
+}
+
+interface FinancialData {
+  period: string;
+  summary: {
+    totalRevenue: number;
+    subscriptionRevenue: number;
+    equipmentRevenue: number;
+    totalTransactions: number;
+    failedPayments: { count: number; amount: number };
+    pendingPayments: { count: number; amount: number };
+  };
+  revenueChart: Array<{
+    date: string;
+    total: number;
+    subscription: number;
+    gear: number;
+  }>;
+}
+
+interface EquipmentData {
+  gearItems: Array<{
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    isActive: boolean;
+    _count: { gearOrderItems: number };
+  }>;
+  recentOrders: Array<{
+    id: number;
+    customer: string;
+    email: string;
+    totalAmount: number;
+    status: string;
+    createdAt: string;
+    items: Array<{ name: string; size: string; quantity: number; customText?: string }>;
+  }>;
+  orderStatistics: Array<{
+    status: string;
+    count: number;
+    totalValue: number;
+  }>;
+  popularItems: Array<{
+    item: { id: number; name: string; price: number };
+    totalQuantity: number;
+    orderCount: number;
+  }>;
+}
+
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "sessions">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "sessions" | "analytics" | "financial" | "equipment">("dashboard");
   const [editingSession, setEditingSession] = useState<number | null>(null);
   const [tempCapacity, setTempCapacity] = useState<number>(0);
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  });
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useToast();
 
@@ -57,6 +149,24 @@ export default function AdminDashboard() {
     queryKey: ["adminUsers"],
     queryFn: () => api.get("/admin/users").then((res) => res.data),
     enabled: activeTab === "users",
+  });
+
+  const { data: analyticsData, isLoading: analyticsLoading } = useQuery<AnalyticsData>({
+    queryKey: ["adminAnalytics", dateRange],
+    queryFn: () => api.get(`/admin/analytics?startDate=${dateRange.start}&endDate=${dateRange.end}`).then((res) => res.data),
+    enabled: activeTab === "analytics",
+  });
+
+  const { data: financialData, isLoading: financialLoading } = useQuery<FinancialData>({
+    queryKey: ["adminFinancial"],
+    queryFn: () => api.get("/admin/financial").then((res) => res.data),
+    enabled: activeTab === "financial",
+  });
+
+  const { data: equipmentData, isLoading: equipmentLoading } = useQuery<EquipmentData>({
+    queryKey: ["adminEquipment"],
+    queryFn: () => api.get("/admin/equipment").then((res) => res.data),
+    enabled: activeTab === "equipment",
   });
 
   const updateUserRoleMutation = useMutation({
@@ -100,6 +210,18 @@ export default function AdminDashboard() {
           error.response?.data?.error || "Unknown error"
         }`
       );
+    },
+  });
+
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: ({ orderId, status }: { orderId: number; status: string }) =>
+      api.put(`/admin/orders/${orderId}/status`, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminEquipment"] });
+      showSuccess("Status Updated", "Order status updated successfully!");
+    },
+    onError: () => {
+      showError("Update Failed", "Failed to update order status");
     },
   });
 
