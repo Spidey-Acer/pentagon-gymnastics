@@ -12,7 +12,10 @@ import {
   getFinancialOverview,
   getEquipmentManagement,
   updateGearItem,
-  updateOrderStatus
+  updateOrderStatus,
+  createGearItem,
+  deleteGearItem,
+  updateGearAvailability
 } from "../controllers/adminController";
 
 const router = Router();
@@ -43,6 +46,9 @@ router.delete("/classes/:classId", deleteClass);
 
 // Equipment management
 router.put("/gear/:itemId", updateGearItem);
+router.post("/gear", createGearItem);
+router.delete("/gear/:itemId", deleteGearItem);
+router.put("/gear/:itemId/availability", updateGearAvailability);
 router.put("/orders/:orderId/status", updateOrderStatus);
 
 export default router;

@@ -123,6 +123,9 @@ model GearItem {
   name        String   // "Vest", "Shorts", "Trousers"
   description String
   price       Float    @default(30.0) // £30 per item
+  category    String   @default("equipment") // "cardio", "strength", "accessories", "yoga"
+  stock       Int      @default(0) // Available quantity
+  imageUrl    String?  // Image URL for the item
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

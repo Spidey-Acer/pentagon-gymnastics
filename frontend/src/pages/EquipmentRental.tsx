@@ -264,20 +264,20 @@ export default function EquipmentRental() {
                             onClick={() => checkSubscriptionAndProceed(() => addToCart(item, 'day'))}
                             className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-xs hover:bg-blue-700"
                           >
-                            Rent Daily
+                            {hasActiveSubscription ? 'Book Daily' : 'Rent Daily'}
                           </button>
                           <button
                             onClick={() => checkSubscriptionAndProceed(() => addToCart(item, 'week'))}
                             className="flex-1 bg-green-600 text-white py-2 px-3 rounded text-xs hover:bg-green-700"
                           >
-                            Rent Weekly
+                            {hasActiveSubscription ? 'Book Weekly' : 'Rent Weekly'}
                           </button>
                         </div>
                         <button
                           onClick={() => checkSubscriptionAndProceed(() => addToCart(item, 'month'))}
                           className="w-full bg-purple-600 text-white py-2 px-3 rounded text-xs hover:bg-purple-700"
                         >
-                          Rent Monthly
+                          {hasActiveSubscription ? 'Book Monthly' : 'Rent Monthly'}
                         </button>
                       </div>
 

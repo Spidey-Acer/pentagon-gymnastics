@@ -741,7 +741,7 @@ export const getEquipmentManagement = async (req: Request, res: Response) => {
 export const updateGearItem = async (req: Request, res: Response) => {
   try {
     const { itemId } = req.params;
-    const { name, description, price, isActive } = req.body;
+    const { name, description, price, isActive, stock, category, imageUrl } = req.body;
 
     const updatedItem = await prisma.gearItem.update({
       where: { id: parseInt(itemId) },
@@ -749,13 +749,98 @@ export const updateGearItem = async (req: Request, res: Response) => {
         ...(name && { name }),
         ...(description && { description }),
         ...(price !== undefined && { price: parseFloat(price) }),
-        ...(isActive !== undefined && { isActive })
+        ...(isActive !== undefined && { isActive }),
+        ...(stock !== undefined && { stock: parseInt(stock) }),
+        ...(category && { category }),
+        ...(imageUrl && { imageUrl })
       }
     });
 
     res.json(updatedItem);
   } catch (error) {
     console.error("Update gear item error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Create new gear item
+export const createGearItem = async (req: Request, res: Response) => {
+  try {
+    const { name, description, price, category, stock, imageUrl } = req.body;
+
+    if (!name || !description || price === undefined || !category) {
+      return res.status(400).json({ error: "Name, description, price, and category are required" });
+    }
+
+    const newItem = await prisma.gearItem.create({
+      data: {
+        name,
+        description,
+        price: parseFloat(price),
+        category,
+        stock: stock ? parseInt(stock) : 0,
+        imageUrl: imageUrl || null,
+        isActive: true
+      }
+    });
+
+    res.status(201).json(newItem);
+  } catch (error) {
+    console.error("Create gear item error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Delete gear item
+export const deleteGearItem = async (req: Request, res: Response) => {
+  try {
+    const { itemId } = req.params;
+
+    // Check if item has pending orders
+    const pendingOrders = await prisma.gearOrderItem.findFirst({
+      where: {
+        gearItemId: parseInt(itemId),
+        gearOrder: {
+          status: { in: ['pending', 'processing'] }
+        }
+      }
+    });
+
+    if (pendingOrders) {
+      return res.status(400).json({ 
+        error: "Cannot delete item with pending orders. Set to inactive instead." 
+      });
+    }
+
+    await prisma.gearItem.delete({
+      where: { id: parseInt(itemId) }
+    });
+
+    res.json({ message: "Gear item deleted successfully" });
+  } catch (error) {
+    console.error("Delete gear item error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Update gear availability/stock
+export const updateGearAvailability = async (req: Request, res: Response) => {
+  try {
+    const { itemId } = req.params;
+    const { stock } = req.body;
+
+    if (stock === undefined || stock < 0) {
+      return res.status(400).json({ error: "Valid stock number is required" });
+    }
+
+    const updatedItem = await prisma.gearItem.update({
+      where: { id: parseInt(itemId) },
+      data: { stock: parseInt(stock) }
+    });
+
+    res.json(updatedItem);
+  } catch (error) {
+    console.error("Update gear availability error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
