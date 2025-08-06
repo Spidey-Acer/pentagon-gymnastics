@@ -2,7 +2,21 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma"; 
 
 export const getClasses = async (req: Request, res: Response) => {
-  const classes = await prisma.class.findMany({ include: { sessions: true } });
+  const classes = await prisma.class.findMany({ 
+    include: { 
+      sessions: true,
+      packageClasses: {
+        include: {
+          package: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      }
+    } 
+  });
   res.json(classes);
 };
 

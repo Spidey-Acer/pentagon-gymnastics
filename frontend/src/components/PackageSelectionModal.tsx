@@ -51,8 +51,12 @@ export default function PackageSelectionModal({ isOpen, onClose, isRequired = fa
         // For demo purposes, mark as successful
         // In production, you'd handle Stripe payment here
       }
+      // Invalidate all relevant queries to sync data across components
       queryClient.invalidateQueries({ queryKey: ['userSubscription'] });
       queryClient.invalidateQueries({ queryKey: ['user'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['bookedSessions'] });
+      queryClient.invalidateQueries({ queryKey: ['currentSubscription'] });
       onClose();
     },
     onError: (error: unknown) => {

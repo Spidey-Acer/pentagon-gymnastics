@@ -4,6 +4,7 @@ import Recommendation from "../components/Recommendation";
 import PackageSelectionModal from "../components/PackageSelectionModal";
 import { useState, useEffect } from "react";
 import { useToast } from "../contexts/ToastContext";
+import { useSubscription } from "../hooks/useSubscription";
 
 interface BookingData {
   id: number;
@@ -24,6 +25,9 @@ export default function Dashboard() {
   const [showPackageModal, setShowPackageModal] = useState(false);
   const queryClient = useQueryClient();
   const { showSuccess, showError, showWarning } = useToast();
+  
+  // Use the subscription hook for consistent state management
+  const { subscription: userSubscription, hasActiveSubscription } = useSubscription();
 
   const {
     data: bookedSessions,
@@ -36,21 +40,12 @@ export default function Dashboard() {
     refetchIntervalInBackground: true, // Continue refreshing in background
   });
 
-  // Check user subscription status
-  const { data: userSubscription, isLoading: isLoadingSubscription } = useQuery(
-    {
-      queryKey: ["userSubscription"],
-      queryFn: () => api.get("/subscriptions/user").then((res) => res.data.subscription),
-      retry: false,
-    }
-  );
-
   // Show package selection modal if user has no active subscription
   useEffect(() => {
-    if (!isLoadingSubscription && !userSubscription) {
+    if (!hasActiveSubscription) {
       setShowPackageModal(true);
     }
-  }, [isLoadingSubscription, userSubscription]);
+  }, [hasActiveSubscription]);
 
   // Additional manual refresh on component mount and periodic intervals
   useEffect(() => {
