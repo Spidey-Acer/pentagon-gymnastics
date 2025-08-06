@@ -129,12 +129,73 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "users" | "sessions" | "analytics" | "financial" | "equipment">("dashboard");
   const [editingSession, setEditingSession] = useState<number | null>(null);
   const [tempCapacity, setTempCapacity] = useState<number>(0);
+  const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+    end: new Date().toISOString().split("T")[0],
   });
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useToast();
+
+  // Equipment management functions
+  const updateItemStock = async (itemId: number, newStock: number) => {
+    try {
+      await api.put(`/admin/gear/${itemId}/availability`, { stock: newStock });
+      queryClient.invalidateQueries({ queryKey: ["equipmentManagement"] });
+      showSuccess("Stock Updated", `Stock updated to ${newStock} units`);
+    } catch (error) {
+      showError("Error", "Failed to update stock");
+    }
+  };
+
+  const toggleItemStatus = async (itemId: number, newStatus: boolean) => {
+    try {
+      await api.put(`/admin/gear/${itemId}`, { isActive: newStatus });
+      queryClient.invalidateQueries({ queryKey: ["equipmentManagement"] });
+      showSuccess(
+        "Status Updated",
+        `Item ${newStatus ? "activated" : "deactivated"}`
+      );
+    } catch (error) {
+      showError("Error", "Failed to update item status");
+    }
+  };
+
+  const editItem = (item: any) => {
+    setEditingItem(item);
+    setShowAddEquipmentModal(true);
+  };
+
+  const deleteItem = async (itemId: number) => {
+    if (!confirm("Are you sure you want to delete this item?")) return;
+
+    try {
+      await api.delete(`/admin/gear/${itemId}`);
+      queryClient.invalidateQueries({ queryKey: ["equipmentManagement"] });
+      showSuccess("Item Deleted", "Equipment item deleted successfully");
+    } catch (error: any) {
+      const message = error.response?.data?.error || "Failed to delete item";
+      showError("Error", message);
+    }
+  };
+
+  const updateOrderStatus = async (orderId: number, newStatus: string) => {
+    try {
+      await api.put(`/admin/orders/${orderId}/status`, { status: newStatus });
+      queryClient.invalidateQueries({ queryKey: ["equipmentManagement"] });
+      showSuccess("Order Updated", `Order status changed to ${newStatus}`);
+    } catch (error) {
+      showError("Error", "Failed to update order status");
+    }
+  };
+
+  const viewOrderDetails = (orderId: number) => {
+    // TODO: Implement order details modal
+    alert(`View details for order #${orderId}`);
+  };
 
   const { data: dashboardData, isLoading: dashboardLoading } =
     useQuery<DashboardData>({
