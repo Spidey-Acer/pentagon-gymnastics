@@ -1,6 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import api from "../services/api";
 import { useToast } from "../contexts/ToastContext";
+import PackageSelectionModal from "./PackageSelectionModal";
 
 interface ClassCardProps {
   cls: {
@@ -42,6 +44,15 @@ const getTimeSlotDisplay = (timeSlot: string) => {
 export default function ClassCard({ cls }: ClassCardProps) {
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useToast();
+  const [showPackageModal, setShowPackageModal] = useState(false);
+
+  // Check user subscription status
+  const { data: userSubscription } = useQuery({
+    queryKey: ["userSubscription"],
+    queryFn: () => api.get("/subscriptions/user").then((res) => res.data.subscription),
+    retry: false,
+  });
+
   const mutation = useMutation({
     mutationFn: (sessionId: number) =>
       api.post("/sessions/book", { sessionId }).then((res) => res.data),
@@ -58,8 +69,26 @@ export default function ClassCard({ cls }: ClassCardProps) {
     },
   });
 
+  const handleBookNow = (sessionId: number) => {
+    // Check if user has an active subscription
+    if (!userSubscription || userSubscription.status !== 'active') {
+      setShowPackageModal(true);
+      return;
+    }
+
+    // User has active subscription, proceed with booking
+    mutation.mutate(sessionId);
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+    <>
+      <PackageSelectionModal
+        isOpen={showPackageModal}
+        onClose={() => setShowPackageModal(false)}
+        isRequired={true}
+      />
+      
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
@@ -108,7 +137,7 @@ export default function ClassCard({ cls }: ClassCardProps) {
                   </p>
                 </div>
                 <button
-                  onClick={() => mutation.mutate(sess.id)}
+                  onClick={() => handleBookNow(sess.id)}
                   disabled={mutation.isPending || isFullyBooked}
                   className={`ml-4 px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                     mutation.isPending || isFullyBooked
@@ -150,7 +179,8 @@ export default function ClassCard({ cls }: ClassCardProps) {
             );
           })}
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

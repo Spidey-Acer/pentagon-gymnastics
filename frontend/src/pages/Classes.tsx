@@ -1,9 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import api from "../services/api";
 import ClassCard from "../components/ClassCard";
+import PackageSelectionModal from "../components/PackageSelectionModal";
+
+interface ClassType {
+  id: number;
+  name: string;
+  description: string;
+  sessions: {
+    id: number;
+    timeSlot: string;
+    capacity: number;
+    bookingCount: number;
+  }[];
+  packageClasses?: {
+    packageId: number;
+    package: {
+      id: number;
+      name: string;
+    };
+  }[];
+}
 
 export default function Classes() {
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  
   const {
     data: classes,
     isLoading,
@@ -16,6 +38,19 @@ export default function Classes() {
     refetchIntervalInBackground: true, // Continue refreshing in background
   });
 
+  // Get user's current subscription
+  const { data: userSubscription, isLoading: isLoadingSubscription } = useQuery({
+    queryKey: ["userSubscription"],
+    queryFn: () => api.get("/subscriptions/user").then((res) => res.data.subscription),
+    retry: false,
+  });
+
+  // Get available packages
+  const { data: packagesData } = useQuery({
+    queryKey: ["packages"],
+    queryFn: () => api.get("/subscriptions/packages").then((res) => res.data.packages),
+  });
+
   // Additional manual refresh on component mount and periodic intervals
   useEffect(() => {
     const interval = setInterval(() => {
@@ -25,7 +60,41 @@ export default function Classes() {
     return () => clearInterval(interval);
   }, [refetch]);
 
-  if (isLoading) {
+  // Filter classes based on user's subscription
+  const getFilteredClasses = () => {
+    if (!classes) return [];
+    
+    if (!userSubscription || userSubscription.status !== 'active') {
+      // Show all classes but mark them as requiring subscription
+      return classes.map((cls: ClassType) => ({
+        ...cls,
+        requiresSubscription: true,
+        availableInPackages: packagesData?.filter((pkg: any) => 
+          pkg.packageClasses?.some((pc: any) => pc.classId === cls.id)
+        ) || []
+      }));
+    }
+
+    // Show classes available in user's package + mark others as upgrade required
+    return classes.map((cls: ClassType) => {
+      const isIncludedInPackage = userSubscription.package.packageClasses?.some(
+        (pc: any) => pc.classId === cls.id
+      );
+      
+      return {
+        ...cls,
+        isIncludedInPackage,
+        requiresUpgrade: !isIncludedInPackage,
+        availableInPackages: packagesData?.filter((pkg: any) => 
+          pkg.packageClasses?.some((pc: any) => pc.classId === cls.id)
+        ) || []
+      };
+    });
+  };
+
+  const filteredClasses = getFilteredClasses();
+
+  if (isLoading || isLoadingSubscription) {
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
         <div className="text-center">
