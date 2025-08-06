@@ -1,10 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
 import Recommendation from "../components/Recommendation";
-import PackageSelectionModal from "../components/PackageSelectionModal";
 import { useState, useEffect } from "react";
 import { useToast } from "../contexts/ToastContext";
-import { useSubscription } from "../hooks/useSubscription";
 
 interface BookingData {
   id: number;
@@ -22,12 +20,8 @@ export default function Dashboard() {
   const [selectedBookings, setSelectedBookings] = useState<Set<number>>(
     new Set()
   );
-  const [showPackageModal, setShowPackageModal] = useState(false);
   const queryClient = useQueryClient();
   const { showSuccess, showError, showWarning } = useToast();
-  
-  // Use the subscription hook for consistent state management
-  const { subscription: userSubscription, hasActiveSubscription } = useSubscription();
 
   const {
     data: bookedSessions,
@@ -39,13 +33,6 @@ export default function Dashboard() {
     refetchInterval: 2000, // Auto-refresh every 2 seconds
     refetchIntervalInBackground: true, // Continue refreshing in background
   });
-
-  // Show package selection modal if user has no active subscription
-  useEffect(() => {
-    if (!hasActiveSubscription) {
-      setShowPackageModal(true);
-    }
-  }, [hasActiveSubscription]);
 
   // Additional manual refresh on component mount and periodic intervals
   useEffect(() => {
@@ -145,12 +132,6 @@ export default function Dashboard() {
 
   return (
     <>
-      <PackageSelectionModal
-        isOpen={showPackageModal}
-        onClose={() => setShowPackageModal(false)}
-        isRequired={!userSubscription}
-      />
-
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
