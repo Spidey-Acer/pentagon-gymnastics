@@ -169,6 +169,19 @@ export default function AdminDashboard() {
     setShowAddEquipmentModal(true);
   };
 
+  const addNewItem = async (equipmentData: any) => {
+    try {
+      await api.post('/admin/gear', equipmentData);
+      queryClient.invalidateQueries({ queryKey: ["equipmentManagement"] });
+      setShowAddEquipmentModal(false);
+      setEditingItem(null);
+      showSuccess("Equipment Added", "New equipment item added successfully");
+    } catch (error: any) {
+      const message = error.response?.data?.error || "Failed to add equipment";
+      showError("Error", message);
+    }
+  };
+
   const deleteItem = async (itemId: number) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
 
@@ -794,7 +807,15 @@ export default function AdminDashboard() {
         {/* Equipment Management Tab */}
         {activeTab === "equipment" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Equipment Management</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Equipment Management</h2>
+              <button
+                onClick={() => setShowAddEquipmentModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Add New Equipment
+              </button>
+            </div>
             
             {equipmentLoading ? (
               <div className="flex justify-center py-12">
@@ -802,43 +823,244 @@ export default function AdminDashboard() {
               </div>
             ) : equipmentData && (
               <>
-                {/* Order Statistics */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {equipmentData.orderStatistics.map((stat, index) => (
-                    <div key={index} className="bg-white rounded-lg shadow p-4">
-                      <h3 className="text-sm font-medium text-gray-500 uppercase">{stat.status}</h3>
-                      <p className="text-2xl font-bold text-gray-900">{stat.count}</p>
-                      <p className="text-sm text-gray-600">£{stat.totalValue.toFixed(2)}</p>
+                {/* Equipment Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Total Items</h3>
+                        <p className="text-2xl font-semibold text-gray-900">{equipmentData.gearItems?.length || 0}</p>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Active Items</h3>
+                        <p className="text-2xl font-semibold text-gray-900">
+                          {equipmentData.gearItems?.filter((item: any) => item.isActive).length || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Total Orders</h3>
+                        <p className="text-2xl font-semibold text-gray-900">{equipmentData.recentOrders?.length || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-yellow-100 rounded-lg">
+                        <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="text-sm font-medium text-gray-500">Revenue</h3>
+                        <p className="text-2xl font-semibold text-gray-900">
+                          £{equipmentData.orderStatistics?.reduce((sum: number, stat: any) => sum + (stat.totalValue || 0), 0)?.toFixed(2) || '0.00'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Equipment Items Table */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900">Equipment Items</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Item
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Category
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Price
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Stock
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Orders
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {equipmentData.gearItems?.map((item: any) => (
+                          <tr key={item.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="h-10 w-10 flex-shrink-0">
+                                  <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                                    <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                  </div>
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                  <div className="text-sm text-gray-500 truncate max-w-xs">{item.description}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full capitalize">
+                                {item.category || 'equipment'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              £{item.price?.toFixed(2) || '0.00'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="number"
+                                  value={item.stock || 0}
+                                  onChange={(e) => updateItemStock(item.id, parseInt(e.target.value))}
+                                  className="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
+                                  min="0"
+                                />
+                                <span className="text-xs text-gray-500">units</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={() => toggleItemStatus(item.id, !item.isActive)}
+                                className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                  item.isActive
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {item.isActive ? 'Active' : 'Inactive'}
+                              </button>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {item._count?.gearOrderItems || 0}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => editItem(item)}
+                                  className="text-blue-600 hover:text-blue-900"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => deleteItem(item.id)}
+                                  className="text-red-600 hover:text-red-900"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 {/* Recent Orders */}
-                <div className="bg-white rounded-lg shadow">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                   <div className="px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
+                    <h3 className="text-lg font-medium text-gray-900">Recent Equipment Orders</h3>
                   </div>
-                  <div className="p-6">
-                    <div className="space-y-4">
-                      {equipmentData.recentOrders.slice(0, 10).map((order) => (
-                        <div key={order.id} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-medium text-gray-900">{order.customer}</h4>
-                              <p className="text-sm text-gray-500">{order.email}</p>
-                              <p className="text-sm text-gray-600">
-                                {order.items.length} items • £{order.totalAmount.toFixed(2)}
-                              </p>
-                            </div>
-                            <div className="text-right">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Order ID
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Customer
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Items
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {equipmentData.recentOrders?.map((order: any) => (
+                          <tr key={order.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              #{order.id}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{order.customer}</div>
+                                <div className="text-sm text-gray-500">{order.email}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">
+                                {order.items?.map((item: any, index: number) => (
+                                  <div key={index} className="text-xs">
+                                    {item.quantity}x {item.name} ({item.size})
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              £{order.totalAmount?.toFixed(2)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <select
                                 value={order.status}
-                                onChange={(e) => updateOrderStatusMutation.mutate({ 
-                                  orderId: order.id, 
-                                  status: e.target.value 
-                                })}
-                                className="border border-gray-300 rounded px-2 py-1 text-sm"
-                                disabled={updateOrderStatusMutation.isPending}
+                                onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                                className={`px-3 py-1 text-xs font-medium rounded-full border-0 ${
+                                  order.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                  order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                  order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                                  order.status === 'delivered' ? 'bg-purple-100 text-purple-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}
                               >
                                 <option value="pending">Pending</option>
                                 <option value="paid">Paid</option>
@@ -846,40 +1068,22 @@ export default function AdminDashboard() {
                                 <option value="shipped">Shipped</option>
                                 <option value="delivered">Delivered</option>
                               </select>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {new Date(order.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-600">
-                              Items: {order.items.map(item => `${item.name} (${item.size}) x${item.quantity}`).join(', ')}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Popular Items */}
-                <div className="bg-white rounded-lg shadow">
-                  <div className="px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900">Popular Items</h3>
-                  </div>
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {equipmentData.popularItems.map((item, index) => (
-                        <div key={index} className="border rounded-lg p-4">
-                          <h4 className="font-medium text-gray-900">{item.item.name}</h4>
-                          <p className="text-sm text-gray-600">£{item.item.price.toFixed(2)} each</p>
-                          <div className="mt-2 flex justify-between text-sm">
-                            <span>Total Sold: {item.totalQuantity}</span>
-                            <span>Orders: {item.orderCount}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <button
+                                onClick={() => viewOrderDetails(order.id)}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                View Details
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </>
@@ -887,6 +1091,182 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+      
+      {/* Add Equipment Modal */}
+      {showAddEquipmentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {editingItem ? 'Edit Equipment' : 'Add New Equipment'}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowAddEquipmentModal(false);
+                    setEditingItem(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const equipmentData = {
+                  name: formData.get('name') as string,
+                  description: formData.get('description') as string,
+                  price: parseFloat(formData.get('price') as string),
+                  category: formData.get('category') as string,
+                  stock: parseInt(formData.get('stock') as string),
+                  imageUrl: formData.get('imageUrl') as string,
+                  sizes: (formData.get('sizes') as string).split(',').map(s => s.trim()).filter(Boolean),
+                };
+                
+                if (editingItem) {
+                  // Update existing item
+                  editItem({ ...editingItem, ...equipmentData });
+                } else {
+                  // Add new item
+                  addNewItem(equipmentData);
+                }
+              }}
+              className="p-6 space-y-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Equipment Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    defaultValue={editingItem?.name || ''}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., Gymnastics Mat"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    name="category"
+                    defaultValue={editingItem?.category || 'equipment'}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="equipment">Equipment</option>
+                    <option value="apparel">Apparel</option>
+                    <option value="accessories">Accessories</option>
+                    <option value="safety">Safety</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price (£)
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    step="0.01"
+                    min="0"
+                    defaultValue={editingItem?.price || ''}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="0.00"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Stock Quantity
+                  </label>
+                  <input
+                    type="number"
+                    name="stock"
+                    min="0"
+                    defaultValue={editingItem?.stock || '0'}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  rows={3}
+                  defaultValue={editingItem?.description || ''}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Describe the equipment..."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Available Sizes
+                </label>
+                <input
+                  type="text"
+                  name="sizes"
+                  defaultValue={editingItem?.sizes?.join(', ') || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., XS, S, M, L, XL (comma-separated)"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter sizes separated by commas, or leave blank if not applicable
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image URL (optional)
+                </label>
+                <input
+                  type="url"
+                  name="imageUrl"
+                  defaultValue={editingItem?.imageUrl || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddEquipmentModal(false);
+                    setEditingItem(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {editingItem ? 'Update Equipment' : 'Add Equipment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
