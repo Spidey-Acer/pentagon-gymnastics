@@ -40,7 +40,7 @@ export default function Dashboard() {
   const { data: userSubscription, isLoading: isLoadingSubscription } = useQuery(
     {
       queryKey: ["userSubscription"],
-      queryFn: () => api.get("/subscriptions/current").then((res) => res.data),
+      queryFn: () => api.get("/subscriptions/current").then((res) => res.data.subscription),
       retry: false,
     }
   );

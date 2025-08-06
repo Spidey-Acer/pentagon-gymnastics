@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { StripeService } from '../services/stripeService';
+import { TransactionService } from '../services/transactionService';
 import { AuthenticatedRequest } from '../types/express';
 
 const prisma = new PrismaClient();
@@ -155,6 +156,26 @@ export class SubscriptionController {
           paymentType: 'subscription',
           description: `${package_.name} Package Subscription`
         }
+      });
+
+      // Log transaction
+      await TransactionService.logTransaction({
+        userId,
+        type: 'subscription',
+        amount: totalAmount,
+        status: 'pending',
+        description: `New subscription: ${package_.name} Package${proteinSupplement ? ' + Protein Supplements' : ''}`,
+        relatedId: subscription.id,
+        relatedType: 'subscription',
+        stripePaymentId: paymentIntent.id
+      });
+
+      // Log activity
+      await TransactionService.logActivity({
+        userId,
+        action: 'subscription_created',
+        description: `Created subscription for ${package_.name} package`,
+        metadata: { packageId, proteinSupplement, amount: totalAmount }
       });
 
       res.json({

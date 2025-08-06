@@ -6,10 +6,18 @@ import { useToast } from '../contexts/ToastContext';
 interface Package {
   id: number;
   name: string;
+  description: string;
   price: number;
-  features: string[];
-  stripeProductId: string;
-  stripePriceId: string;
+  maxClasses: number | null;
+  priority: number;
+  isActive: boolean;
+  packageClasses: Array<{
+    class: {
+      id: number;
+      name: string;
+      description: string;
+    };
+  }>;
 }
 
 interface PackageSelectionModalProps {
@@ -27,7 +35,7 @@ export default function PackageSelectionModal({ isOpen, onClose, isRequired = fa
 
   const { data: packages, isLoading } = useQuery({
     queryKey: ['packages'],
-    queryFn: () => api.get('/subscriptions/packages').then(res => res.data),
+    queryFn: () => api.get('/subscriptions/packages').then(res => res.data.packages),
     enabled: isOpen,
   });
 
@@ -150,14 +158,32 @@ export default function PackageSelectionModal({ isOpen, onClose, isRequired = fa
                     <span className="text-gray-600">/month</span>
                   </div>
                   <ul className="text-left space-y-2 text-sm text-gray-600">
-                    {pkg.features.map((feature, index) => (
+                    <li className="flex items-start">
+                      <svg className="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {pkg.maxClasses ? `${pkg.maxClasses} classes per month` : 'Unlimited classes'}
+                    </li>
+                    {pkg.packageClasses.map((packageClass, index) => (
                       <li key={index} className="flex items-start">
                         <svg className="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        {feature}
+                        Access to {packageClass.class.name}
                       </li>
                     ))}
+                    <li className="flex items-start">
+                      <svg className="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Online booking system
+                    </li>
+                    <li className="flex items-start">
+                      <svg className="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Equipment rental discounts
+                    </li>
                   </ul>
                 </div>
               </div>

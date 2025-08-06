@@ -23,6 +23,8 @@ model User {
   bookings        Booking[]
   subscriptions   Subscription[]
   gearOrders      GearOrder[]
+  transactions    Transaction[]
+  activityLogs    ActivityLog[]
 }
 
 model Class {
@@ -152,4 +154,44 @@ model GearOrderItem {
   customText  String?  // Customer name for customization
   gearOrder   GearOrder @relation(fields: [gearOrderId], references: [id])
   gearItem    GearItem  @relation(fields: [gearItemId], references: [id])
+}
+
+// Comprehensive Transaction Tracking
+model Transaction {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  type            String   // "subscription", "gear", "booking", "cancellation", "refund", "penalty"
+  amount          Float
+  currency        String   @default("gbp")
+  status          String   // "completed", "pending", "failed", "refunded"
+  description     String
+  relatedId       Int?     // Related subscription, gear order, booking ID
+  relatedType     String?  // "subscription", "gear_order", "booking"
+  stripePaymentId String?  // Stripe payment intent or charge ID
+  metadata        Json?    // Additional transaction metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+// Transaction Categories for reporting
+model TransactionCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // "Subscription", "Equipment", "Penalties", "Refunds"
+  description String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+// User Account Activity Log
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  action      String   // "login", "logout", "booking_created", "booking_cancelled", "profile_updated", "subscription_created"
+  description String
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
 }

@@ -8,9 +8,9 @@ const router = express.Router();
 router.get('/packages', SubscriptionController.getPackages);
 
 // Protected routes (require authentication)
-router.get('/subscription', authenticate, SubscriptionController.getUserSubscription);
-router.post('/subscription', authenticate, SubscriptionController.createSubscription);
-router.put('/subscription/switch', authenticate, SubscriptionController.switchPackage);
-router.delete('/subscription', authenticate, SubscriptionController.cancelSubscription);
+router.get('/current', authenticate, SubscriptionController.getUserSubscription);
+router.post('/create', authenticate, SubscriptionController.createSubscription);
+router.put('/switch', authenticate, SubscriptionController.switchPackage);
+router.delete('/cancel', authenticate, SubscriptionController.cancelSubscription);
 
 export default router;
