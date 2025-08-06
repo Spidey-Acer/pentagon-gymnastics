@@ -45,6 +45,18 @@ export default function Navbar() {
                     Classes
                   </NavLink>
                   <NavLink
+                    to="/equipment"
+                    className={({ isActive }) =>
+                      `px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                        isActive
+                          ? "bg-blue-700 text-white"
+                          : "text-blue-100 hover:bg-blue-700 hover:text-white"
+                      }`
+                    }
+                  >
+                    Equipment
+                  </NavLink>
+                  <NavLink
                     to="/packages"
                     className={({ isActive }) =>
                       `px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
