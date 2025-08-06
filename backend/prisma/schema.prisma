@@ -96,6 +96,7 @@ model Subscription {
   user                  User     @relation(fields: [userId], references: [id])
   package               Package  @relation(fields: [packageId], references: [id])
   payments              Payment[]
+  simulatedPayments     SimulatedPayment[]
 
   @@unique([userId]) // One active subscription per user
 }
@@ -145,6 +146,7 @@ model GearOrder {
   user            User     @relation(fields: [userId], references: [id])
   items           GearOrderItem[]
   payments        Payment[]
+  simulatedPayments SimulatedPayment[]
 }
 
 model GearOrderItem {
@@ -184,6 +186,40 @@ model TransactionCategory {
   description String
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
+}
+
+// Simulated Payment Cards (replaces Stripe)
+model SimulatedCard {
+  id              Int      @id @default(autoincrement())
+  cardNumber      String   @unique // Last 4 digits will be shown to user
+  cardholderName  String
+  expiryMonth     Int
+  expiryYear      Int
+  cvv             String
+  cardType        String   // "visa", "mastercard", "amex"
+  isValid         Boolean  @default(true) // For testing failed payments
+  balance         Float    @default(10000.0) // Simulated balance for testing
+  createdAt       DateTime @default(now())
+  simulatedPayments SimulatedPayment[]
+}
+
+model SimulatedPayment {
+  id                Int      @id @default(autoincrement())
+  cardId            Int
+  subscriptionId    Int?
+  gearOrderId       Int?
+  amount            Float
+  currency          String   @default("gbp")
+  status            String   // "pending", "succeeded", "failed", "declined"
+  paymentType       String   // "subscription", "gear", "upgrade"
+  description       String?
+  failureReason     String?  // "insufficient_funds", "card_declined", "expired_card"
+  simulatedDelay    Int      @default(2) // Seconds to simulate processing
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  card              SimulatedCard @relation(fields: [cardId], references: [id])
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
+  gearOrder         GearOrder? @relation(fields: [gearOrderId], references: [id])
 }
 
 // User Account Activity Log

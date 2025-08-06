@@ -8,6 +8,7 @@ import gearRoutes from "./routes/gearRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import webhookRoutes from "./routes/webhookRoutes";
 import transactionRoutes from "./routes/transactionRoutes";
+import paymentRoutes from "./routes/paymentRoutes";
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/api/gear", gearRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/webhooks", webhookRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/payments", paymentRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

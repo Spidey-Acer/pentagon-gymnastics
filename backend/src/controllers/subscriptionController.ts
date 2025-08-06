@@ -1,6 +1,5 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { StripeService } from '../services/stripeService';
 import { TransactionService } from '../services/transactionService';
 import { AuthenticatedRequest } from '../types/express';
 
@@ -99,37 +98,13 @@ export class SubscriptionController {
         return res.status(404).json({ success: false, message: 'User not found' });
       }
 
-      // Create or get Stripe customer
-      let stripeCustomerId = user.stripeCustomerId;
-      if (!stripeCustomerId) {
-        const customer = await StripeService.createCustomer(
-          user.email,
-          `${user.forename} ${user.surname}`
-        );
-        stripeCustomerId = customer.id;
-
-        // Update user with Stripe customer ID
-        await prisma.user.update({
-          where: { id: userId },
-          data: { stripeCustomerId }
-        });
-      }
-
       // Calculate total amount
       let totalAmount = package_.price;
       if (proteinSupplement) {
         totalAmount += 50; // £50 for protein supplement
       }
 
-      // For now, create a payment intent instead of subscription for demo
-      // In production, you'd create recurring Stripe subscriptions
-      const paymentIntent = await StripeService.createPaymentIntent(
-        totalAmount,
-        stripeCustomerId,
-        `${package_.name} Package Subscription${proteinSupplement ? ' + Protein Supplements' : ''}`
-      );
-
-      // Create subscription record
+      // Create subscription record (payment will be processed separately)
       const startDate = new Date();
       const endDate = new Date();
       endDate.setDate(startDate.getDate() + 30); // 30-day period
@@ -138,23 +113,11 @@ export class SubscriptionController {
         data: {
           userId,
           packageId,
-          status: 'pending',
+          status: 'pending', // Will be updated when payment is processed
           startDate,
           endDate,
           proteinSupplement,
           proteinSupplementPrice: proteinSupplement ? 50 : 0
-        }
-      });
-
-      // Create payment record
-      await prisma.payment.create({
-        data: {
-          subscriptionId: subscription.id,
-          stripePaymentIntentId: paymentIntent.id,
-          amount: totalAmount,
-          status: 'pending',
-          paymentType: 'subscription',
-          description: `${package_.name} Package Subscription`
         }
       });
 
@@ -166,8 +129,7 @@ export class SubscriptionController {
         status: 'pending',
         description: `New subscription: ${package_.name} Package${proteinSupplement ? ' + Protein Supplements' : ''}`,
         relatedId: subscription.id,
-        relatedType: 'subscription',
-        stripePaymentId: paymentIntent.id
+        relatedType: 'subscription'
       });
 
       // Log activity
@@ -181,8 +143,8 @@ export class SubscriptionController {
       res.json({
         success: true,
         subscription,
-        clientSecret: paymentIntent.client_secret,
-        amount: totalAmount
+        amount: totalAmount,
+        message: 'Subscription created successfully. Proceed to payment.'
       });
 
     } catch (error) {
@@ -226,35 +188,16 @@ export class SubscriptionController {
       const newPrice = newPackage.price + (proteinSupplement ? 50 : 0);
       const priceDifference = newPrice - currentPrice;
 
-      // If there's a price difference, create a payment
+      // If there's a price difference, require payment processing
       if (priceDifference > 0) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        
-        const paymentIntent = await StripeService.createPaymentIntent(
-          priceDifference,
-          user!.stripeCustomerId!,
-          `Package upgrade: ${currentSubscription.package.name} to ${newPackage.name}`
-        );
-
-        // Create payment record
-        await prisma.payment.create({
-          data: {
-            subscriptionId: currentSubscription.id,
-            stripePaymentIntentId: paymentIntent.id,
-            amount: priceDifference,
-            status: 'pending',
-            paymentType: 'upgrade',
-            description: `Package upgrade to ${newPackage.name}`
-          }
-        });
-
-        // Update subscription (will be confirmed after payment)
+        // Update subscription but keep status as pending until payment
         const updatedSubscription = await prisma.subscription.update({
           where: { id: currentSubscription.id },
           data: {
             packageId,
             proteinSupplement: proteinSupplement ?? currentSubscription.proteinSupplement,
-            proteinSupplementPrice: proteinSupplement ? 50 : 0
+            proteinSupplementPrice: proteinSupplement ? 50 : 0,
+            status: 'pending' // Will be activated after payment
           },
           include: { package: true }
         });
@@ -262,8 +205,9 @@ export class SubscriptionController {
         return res.json({
           success: true,
           subscription: updatedSubscription,
-          clientSecret: paymentIntent.client_secret,
-          upgradeAmount: priceDifference
+          upgradeAmount: priceDifference,
+          requiresPayment: true,
+          message: 'Package updated. Additional payment required for upgrade.'
         });
       } else {
         // No additional payment needed (downgrade or same price)

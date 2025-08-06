@@ -9,7 +9,7 @@ export interface TransactionData {
   description: string;
   relatedId?: number;
   relatedType?: string;
-  stripePaymentId?: string;
+  simulatedPaymentId?: number; // Reference to simulated payment
   metadata?: any;
 }
 
@@ -36,7 +36,7 @@ export class TransactionService {
           description: data.description,
           relatedId: data.relatedId,
           relatedType: data.relatedType,
-          stripePaymentId: data.stripePaymentId,
+          stripePaymentId: data.simulatedPaymentId?.toString(), // Convert to string to maintain compatibility
           metadata: data.metadata || {}
         },
         include: {

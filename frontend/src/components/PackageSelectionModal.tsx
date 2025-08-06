@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import SimulatedPaymentForm from './SimulatedPaymentForm';
 
 interface Package {
   id: number;
@@ -30,6 +31,8 @@ export default function PackageSelectionModal({ isOpen, onClose, isRequired = fa
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [addProtein, setAddProtein] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
 
@@ -45,19 +48,10 @@ export default function PackageSelectionModal({ isOpen, onClose, isRequired = fa
       return response.data;
     },
     onSuccess: (data) => {
-      // Handle successful subscription creation
-      if (data.clientSecret) {
-        showSuccess('Subscription Created', 'Your subscription has been created successfully!');
-        // For demo purposes, mark as successful
-        // In production, you'd handle Stripe payment here
-      }
-      // Invalidate all relevant queries to sync data across components
-      queryClient.invalidateQueries({ queryKey: ['userSubscription'] });
-      queryClient.invalidateQueries({ queryKey: ['user'] });
-      queryClient.invalidateQueries({ queryKey: ['classes'] });
-      queryClient.invalidateQueries({ queryKey: ['bookedSessions'] });
-      queryClient.invalidateQueries({ queryKey: ['currentSubscription'] });
-      onClose();
+      // Handle successful subscription creation - now requires payment
+      setSubscriptionData(data);
+      setShowPayment(true);
+      showSuccess('Subscription Created', 'Please complete payment to activate your subscription.');
     },
     onError: (error: unknown) => {
       console.error('Subscription error:', error);
@@ -70,6 +64,23 @@ export default function PackageSelectionModal({ isOpen, onClose, isRequired = fa
       setIsProcessing(false);
     },
   });
+
+  const handlePaymentSuccess = (paymentId: number) => {
+    // Payment successful - invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['userSubscription'] });
+    queryClient.invalidateQueries({ queryKey: ['user'] });
+    queryClient.invalidateQueries({ queryKey: ['classes'] });
+    queryClient.invalidateQueries({ queryKey: ['bookedSessions'] });
+    queryClient.invalidateQueries({ queryKey: ['currentSubscription'] });
+    
+    showSuccess('Payment Successful', 'Your subscription has been activated!');
+    onClose();
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPayment(false);
+    setSubscriptionData(null);
+  };
 
   const handleSubscribe = async () => {
     if (!selectedPackage) {
@@ -265,6 +276,21 @@ export default function PackageSelectionModal({ isOpen, onClose, isRequired = fa
           </div>
         </div>
       </div>
+
+      {/* Payment Form Modal */}
+      {showPayment && subscriptionData && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="max-w-4xl w-full mx-4">
+            <SimulatedPaymentForm
+              amount={subscriptionData.amount}
+              description={`${selectedPackage?.name} Package Subscription${addProtein ? ' + Protein Supplements' : ''}`}
+              subscriptionId={subscriptionData.subscription.id}
+              onPaymentSuccess={handlePaymentSuccess}
+              onPaymentCancel={handlePaymentCancel}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
