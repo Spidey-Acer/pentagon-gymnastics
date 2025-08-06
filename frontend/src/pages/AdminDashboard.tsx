@@ -164,9 +164,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const editItem = (item: any) => {
+  const openEditModal = (item: any) => {
     setEditingItem(item);
     setShowAddEquipmentModal(true);
+  };
+
+  const submitEditItem = async (item: any) => {
+    // Update existing item
+    try {
+      await api.put(`/admin/gear/${item.id}`, item);
+      queryClient.invalidateQueries({ queryKey: ["equipmentManagement"] });
+      setShowAddEquipmentModal(false);
+      setEditingItem(null);
+      showSuccess("Equipment Updated", "Equipment item updated successfully");
+    } catch (error: any) {
+      const message = error.response?.data?.error || "Failed to update equipment";
+      showError("Error", message);
+    }
   };
 
   const addNewItem = async (equipmentData: any) => {
@@ -974,7 +988,7 @@ export default function AdminDashboard() {
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex space-x-2">
                                 <button
-                                  onClick={() => editItem(item)}
+                                  onClick={() => openEditModal(item)}
                                   className="text-blue-600 hover:text-blue-900"
                                 >
                                   Edit
@@ -1131,7 +1145,7 @@ export default function AdminDashboard() {
                 
                 if (editingItem) {
                   // Update existing item
-                  editItem({ ...editingItem, ...equipmentData });
+                  submitEditItem({ ...editingItem, ...equipmentData });
                 } else {
                   // Add new item
                   addNewItem(equipmentData);

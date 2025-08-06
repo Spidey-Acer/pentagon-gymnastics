@@ -342,8 +342,14 @@ export default function EquipmentRental() {
                       )}
                     </div>
                     
-                    <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 mt-4">
-                      Proceed to Checkout
+                    <button 
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 mt-4"
+                      onClick={() => checkSubscriptionAndProceed(() => {
+                        // Handle checkout logic here
+                        showSuccess("Checkout", "Proceeding to checkout...");
+                      })}
+                    >
+                      {hasActiveSubscription ? 'Book Now' : 'Select Package'}
                     </button>
                   </>
                 )}
