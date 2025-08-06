@@ -277,10 +277,13 @@ export default function AdminDashboard() {
               { key: "dashboard", label: "Dashboard", icon: "📊" },
               { key: "users", label: "Users", icon: "👥" },
               { key: "sessions", label: "Sessions", icon: "📅" },
+              { key: "analytics", label: "Analytics", icon: "📈" },
+              { key: "financial", label: "Financial", icon: "💰" },
+              { key: "equipment", label: "Equipment", icon: "🏋️‍♂️" },
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as "dashboard" | "users" | "sessions")}
+                onClick={() => setActiveTab(tab.key as "dashboard" | "users" | "sessions" | "analytics" | "financial" | "equipment")}
                 className={`${
                   activeTab === tab.key
                     ? "border-blue-500 text-blue-600"
@@ -508,6 +511,318 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === "analytics" && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Business Analytics</h2>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium text-gray-700">From:</label>
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+                    className="border border-gray-300 rounded px-3 py-1 text-sm"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium text-gray-700">To:</label>
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                    className="border border-gray-300 rounded px-3 py-1 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {analyticsLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : analyticsData && (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Total Revenue</h3>
+                    <p className="text-3xl font-bold text-green-600">£{analyticsData.summary.totalIncome.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Total Customers</h3>
+                    <p className="text-3xl font-bold text-blue-600">{analyticsData.summary.totalCustomers}</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Equipment Sales</h3>
+                    <p className="text-3xl font-bold text-purple-600">£{analyticsData.summary.totalEquipmentRevenue.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Total Payments</h3>
+                    <p className="text-3xl font-bold text-orange-600">{analyticsData.summary.totalPayments}</p>
+                  </div>
+                </div>
+
+                {/* Revenue Breakdown */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Breakdown</h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Subscriptions</span>
+                        <span className="font-medium">£{analyticsData.incomeBreakdown.subscriptionRevenue.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Equipment</span>
+                        <span className="font-medium">£{analyticsData.incomeBreakdown.equipmentRevenue.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Protein Supplements</span>
+                        <span className="font-medium">£{analyticsData.incomeBreakdown.proteinSupplementRevenue.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Customers by Package</h3>
+                    <div className="space-y-3">
+                      {analyticsData.customersByPackage.map((item, index) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <span className="text-gray-600">{item.package.name}</span>
+                          <span className="font-medium">{item.customerCount} customers</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top Customers */}
+                <div className="bg-white rounded-lg shadow">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900">Top Spending Customers</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2">Customer</th>
+                            <th className="text-right py-2">Total Spending</th>
+                            <th className="text-right py-2">Subscriptions</th>
+                            <th className="text-right py-2">Equipment</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analyticsData.topCustomers.slice(0, 10).map((customer, index) => (
+                            <tr key={index} className="border-b">
+                              <td className="py-2">
+                                <div>
+                                  <div className="font-medium">{customer.user.name}</div>
+                                  <div className="text-sm text-gray-500">{customer.user.email}</div>
+                                </div>
+                              </td>
+                              <td className="text-right py-2 font-medium">£{customer.totalSpending.toFixed(2)}</td>
+                              <td className="text-right py-2">£{customer.subscriptionSpending.toFixed(2)}</td>
+                              <td className="text-right py-2">£{customer.gearSpending.toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Equipment Analysis */}
+                <div className="bg-white rounded-lg shadow">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900">Equipment Analysis</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                      <div>
+                        <h4 className="font-medium text-gray-900">Total Orders</h4>
+                        <p className="text-2xl font-bold text-blue-600">{analyticsData.equipmentAnalysis.totalOrders}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">Total Revenue</h4>
+                        <p className="text-2xl font-bold text-green-600">£{analyticsData.equipmentAnalysis.totalRevenue.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">Popular Items</h4>
+                        <p className="text-2xl font-bold text-purple-600">{analyticsData.equipmentAnalysis.popularItems.length}</p>
+                      </div>
+                    </div>
+                    
+                    <h4 className="font-medium text-gray-900 mb-3">Most Popular Items</h4>
+                    <div className="space-y-2">
+                      {analyticsData.equipmentAnalysis.popularItems.slice(0, 5).map((item, index) => (
+                        <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                          <span className="font-medium">{item.name}</span>
+                          <div className="text-sm text-gray-600">
+                            {item.quantity} sold • £{item.revenue.toFixed(2)} revenue
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Financial Tab */}
+        {activeTab === "financial" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Financial Overview</h2>
+            
+            {financialLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : financialData && (
+              <>
+                {/* Financial Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Total Revenue</h3>
+                    <p className="text-3xl font-bold text-green-600">£{financialData.summary.totalRevenue.toFixed(2)}</p>
+                    <p className="text-sm text-gray-500">{financialData.period}</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Failed Payments</h3>
+                    <p className="text-3xl font-bold text-red-600">{financialData.summary.failedPayments.count}</p>
+                    <p className="text-sm text-gray-500">£{financialData.summary.failedPayments.amount.toFixed(2)} lost</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Pending Payments</h3>
+                    <p className="text-3xl font-bold text-yellow-600">{financialData.summary.pendingPayments.count}</p>
+                    <p className="text-sm text-gray-500">£{financialData.summary.pendingPayments.amount.toFixed(2)} pending</p>
+                  </div>
+                </div>
+
+                {/* Revenue Chart */}
+                <div className="bg-white rounded-lg shadow">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900">Revenue Trend</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {financialData.revenueChart.map((day, index) => (
+                        <div key={index} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                          <span className="text-sm font-medium">{new Date(day.date).toLocaleDateString()}</span>
+                          <div className="flex space-x-4 text-sm">
+                            <span className="text-green-600">Total: £{day.total.toFixed(2)}</span>
+                            <span className="text-blue-600">Sub: £{day.subscription.toFixed(2)}</span>
+                            <span className="text-purple-600">Gear: £{day.gear.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Equipment Management Tab */}
+        {activeTab === "equipment" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Equipment Management</h2>
+            
+            {equipmentLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : equipmentData && (
+              <>
+                {/* Order Statistics */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {equipmentData.orderStatistics.map((stat, index) => (
+                    <div key={index} className="bg-white rounded-lg shadow p-4">
+                      <h3 className="text-sm font-medium text-gray-500 uppercase">{stat.status}</h3>
+                      <p className="text-2xl font-bold text-gray-900">{stat.count}</p>
+                      <p className="text-sm text-gray-600">£{stat.totalValue.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Recent Orders */}
+                <div className="bg-white rounded-lg shadow">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-4">
+                      {equipmentData.recentOrders.slice(0, 10).map((order) => (
+                        <div key={order.id} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{order.customer}</h4>
+                              <p className="text-sm text-gray-500">{order.email}</p>
+                              <p className="text-sm text-gray-600">
+                                {order.items.length} items • £{order.totalAmount.toFixed(2)}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <select
+                                value={order.status}
+                                onChange={(e) => updateOrderStatusMutation.mutate({ 
+                                  orderId: order.id, 
+                                  status: e.target.value 
+                                })}
+                                className="border border-gray-300 rounded px-2 py-1 text-sm"
+                                disabled={updateOrderStatusMutation.isPending}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                                <option value="processing">Processing</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                              </select>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(order.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-600">
+                              Items: {order.items.map(item => `${item.name} (${item.size}) x${item.quantity}`).join(', ')}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Popular Items */}
+                <div className="bg-white rounded-lg shadow">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900">Popular Items</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {equipmentData.popularItems.map((item, index) => (
+                        <div key={index} className="border rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900">{item.item.name}</h4>
+                          <p className="text-sm text-gray-600">£{item.item.price.toFixed(2)} each</p>
+                          <div className="mt-2 flex justify-between text-sm">
+                            <span>Total Sold: {item.totalQuantity}</span>
+                            <span>Orders: {item.orderCount}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
