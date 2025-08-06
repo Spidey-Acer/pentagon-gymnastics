@@ -36,10 +36,10 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
         }
       }),
 
-      // Total income analysis
-      prisma.payment.aggregate({
+      // Total income analysis (using simulated payments)
+      prisma.simulatedPayment.aggregate({
         where: {
-          status: 'succeeded',
+          status: 'completed',
           createdAt: {
             gte: start,
             lte: end
@@ -82,14 +82,14 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
           user: {
             select: { email: true, forename: true, surname: true }
           },
-          payments: {
-            where: { status: 'succeeded' }
+          simulatedPayments: {
+            where: { status: 'completed' }
           }
         }
       }),
 
-      // Payment status analysis
-      prisma.payment.groupBy({
+      // Payment status analysis (using simulated payments)
+      prisma.simulatedPayment.groupBy({
         by: ['status', 'paymentType'],
         where: {
           createdAt: {
@@ -221,7 +221,7 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
       customersByPackage: customersData,
       incomeBreakdown: {
         subscriptionRevenue: subscriptionRevenue.reduce((sum, sub) => 
-          sum + sub.payments.reduce((paySum, payment) => paySum + payment.amount, 0), 0),
+          sum + sub.simulatedPayments.reduce((paySum: number, payment: any) => paySum + payment.amount, 0), 0),
         equipmentRevenue: totalEquipmentRevenue,
         proteinSupplementRevenue: customersData.reduce((sum, item) => sum + item.proteinSupplementRevenue, 0)
       },
@@ -518,47 +518,47 @@ export const getFinancialOverview = async (req: Request, res: Response) => {
     const startDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
 
     const [
-      subscriptionRevenue,
-      equipmentRevenue,
-      totalPayments,
-      failedPayments,
-      pendingPayments,
-      revenueByDay
+      simulatedSubscriptionRevenue,
+      simulatedEquipmentRevenue,
+      simulatedTotalPayments,
+      simulatedFailedPayments,
+      simulatedPendingPayments,
+      simulatedRevenueByDay
     ] = await Promise.all([
-      // Subscription revenue
-      prisma.payment.aggregate({
+      // Simulated Subscription revenue
+      prisma.simulatedPayment.aggregate({
         where: {
           paymentType: 'subscription',
-          status: 'succeeded',
+          status: 'completed',
           createdAt: { gte: startDate }
         },
         _sum: { amount: true },
         _count: { id: true }
       }),
 
-      // Equipment revenue
-      prisma.payment.aggregate({
+      // Simulated Equipment revenue
+      prisma.simulatedPayment.aggregate({
         where: {
           paymentType: 'gear',
-          status: 'succeeded',
+          status: 'completed',
           createdAt: { gte: startDate }
         },
         _sum: { amount: true },
         _count: { id: true }
       }),
 
-      // Total successful payments
-      prisma.payment.aggregate({
+      // Total successful simulated payments
+      prisma.simulatedPayment.aggregate({
         where: {
-          status: 'succeeded',
+          status: 'completed',
           createdAt: { gte: startDate }
         },
         _sum: { amount: true },
         _count: { id: true }
       }),
 
-      // Failed payments (potential penalties)
-      prisma.payment.aggregate({
+      // Failed simulated payments
+      prisma.simulatedPayment.aggregate({
         where: {
           status: 'failed',
           createdAt: { gte: startDate }
@@ -567,8 +567,8 @@ export const getFinancialOverview = async (req: Request, res: Response) => {
         _count: { id: true }
       }),
 
-      // Pending payments
-      prisma.payment.aggregate({
+      // Pending simulated payments
+      prisma.simulatedPayment.aggregate({
         where: {
           status: 'pending',
           createdAt: { gte: startDate }
@@ -577,10 +577,10 @@ export const getFinancialOverview = async (req: Request, res: Response) => {
         _count: { id: true }
       }),
 
-      // Revenue by day for chart
-      prisma.payment.findMany({
+      // Revenue by day for chart (simulated payments)
+      prisma.simulatedPayment.findMany({
         where: {
-          status: 'succeeded',
+          status: 'completed',
           createdAt: { gte: startDate }
         },
         select: {
@@ -593,7 +593,7 @@ export const getFinancialOverview = async (req: Request, res: Response) => {
     ]);
 
     // Group revenue by day
-    const revenueChart = revenueByDay.reduce((acc, payment) => {
+    const revenueChart = simulatedRevenueByDay.reduce((acc, payment) => {
       const date = payment.createdAt.toISOString().split('T')[0];
       if (!acc[date]) {
         acc[date] = { date, total: 0, subscription: 0, gear: 0 };
@@ -610,30 +610,20 @@ export const getFinancialOverview = async (req: Request, res: Response) => {
     res.json({
       period: `${daysBack} days`,
       summary: {
-        totalRevenue: totalPayments._sum.amount || 0,
-        subscriptionRevenue: subscriptionRevenue._sum.amount || 0,
-        equipmentRevenue: equipmentRevenue._sum.amount || 0,
-        totalTransactions: totalPayments._count,
+        totalRevenue: simulatedTotalPayments._sum.amount || 0,
+        subscriptionRevenue: simulatedSubscriptionRevenue._sum.amount || 0,
+        equipmentRevenue: simulatedEquipmentRevenue._sum.amount || 0,
+        totalTransactions: simulatedTotalPayments._count || 0,
         failedPayments: {
-          count: failedPayments._count,
-          amount: failedPayments._sum.amount || 0
+          count: simulatedFailedPayments._count || 0,
+          amount: simulatedFailedPayments._sum.amount || 0
         },
         pendingPayments: {
-          count: pendingPayments._count,
-          amount: pendingPayments._sum.amount || 0
+          count: simulatedPendingPayments._count || 0,
+          amount: simulatedPendingPayments._sum.amount || 0
         }
       },
-      revenueChart: Object.values(revenueChart),
-      breakdown: {
-        subscriptionStats: {
-          revenue: subscriptionRevenue._sum.amount || 0,
-          transactions: subscriptionRevenue._count
-        },
-        equipmentStats: {
-          revenue: equipmentRevenue._sum.amount || 0,
-          transactions: equipmentRevenue._count
-        }
-      }
+      revenueChart: Object.values(revenueChart)
     });
   } catch (error) {
     console.error("Financial overview error:", error);
@@ -829,7 +819,10 @@ export const updateGearAvailability = async (req: Request, res: Response) => {
     const { itemId } = req.params;
     const { stock } = req.body;
 
+    console.log('Update gear availability called:', { itemId, stock, body: req.body });
+
     if (stock === undefined || stock < 0) {
+      console.log('Invalid stock value:', stock);
       return res.status(400).json({ error: "Valid stock number is required" });
     }
 
@@ -838,6 +831,7 @@ export const updateGearAvailability = async (req: Request, res: Response) => {
       data: { stock: parseInt(stock) }
     });
 
+    console.log('Stock updated successfully:', updatedItem);
     res.json(updatedItem);
   } catch (error) {
     console.error("Update gear availability error:", error);

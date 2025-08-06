@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { StripeService } from '../services/stripeService';
+import { SimulatedPaymentService } from '../services/simulatedPaymentService';
 import { AuthenticatedRequest } from '../types/express';
 
 const prisma = new PrismaClient();
@@ -63,7 +63,7 @@ export class GearController {
         });
       }
 
-      // Get user details for Stripe
+      // Get user details
       const user = await prisma.user.findUnique({
         where: { id: userId }
       });
@@ -71,28 +71,6 @@ export class GearController {
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
       }
-
-      // Create or get Stripe customer
-      let stripeCustomerId = user.stripeCustomerId;
-      if (!stripeCustomerId) {
-        const customer = await StripeService.createCustomer(
-          user.email,
-          `${user.forename} ${user.surname}`
-        );
-        stripeCustomerId = customer.id;
-
-        await prisma.user.update({
-          where: { id: userId },
-          data: { stripeCustomerId }
-        });
-      }
-
-      // Create payment intent
-      const paymentIntent = await StripeService.createPaymentIntent(
-        totalAmount,
-        stripeCustomerId,
-        `Pentagon Gymnastics Gear Order - ${validatedItems.length} items`
-      );
 
       // Create gear order
       const gearOrder = await prisma.gearOrder.create({
@@ -102,7 +80,6 @@ export class GearController {
           status: 'pending',
           customerName: customerName || `${user.forename} ${user.surname}`,
           shippingAddress,
-          stripePaymentIntentId: paymentIntent.id,
           items: {
             create: validatedItems
           }
@@ -116,28 +93,87 @@ export class GearController {
         }
       });
 
-      // Create payment record
-      await prisma.payment.create({
-        data: {
-          gearOrderId: gearOrder.id,
-          stripePaymentIntentId: paymentIntent.id,
-          amount: totalAmount,
-          status: 'pending',
-          paymentType: 'gear',
-          description: `Gear order #${gearOrder.id}`
-        }
-      });
-
       res.json({
         success: true,
         gearOrder,
-        clientSecret: paymentIntent.client_secret,
-        totalAmount
+        totalAmount,
+        message: 'Gear order created successfully. Proceed to payment.'
       });
 
     } catch (error) {
       console.error('Error creating gear order:', error);
       res.status(500).json({ success: false, message: 'Failed to create gear order' });
+    }
+  }
+
+  // Process gear order payment
+  static async processGearOrderPayment(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const { orderId, cardId } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ success: false, message: 'User not authenticated' });
+      }
+
+      if (!orderId || !cardId) {
+        return res.status(400).json({ success: false, message: 'Order ID and card ID are required' });
+      }
+
+      // Get the order
+      const gearOrder = await prisma.gearOrder.findFirst({
+        where: { 
+          id: parseInt(orderId),
+          userId,
+          status: 'pending'
+        },
+        include: {
+          items: {
+            include: {
+              gearItem: true
+            }
+          }
+        }
+      });
+
+      if (!gearOrder) {
+        return res.status(404).json({ success: false, message: 'Order not found or already processed' });
+      }
+
+      // Process payment using simulated payment service
+      const paymentResult = await SimulatedPaymentService.processPayment(
+        parseInt(cardId),
+        gearOrder.totalAmount,
+        'gear',
+        `Gear order #${gearOrder.id}`,
+        undefined,
+        gearOrder.id
+      );
+
+      if (paymentResult.success) {
+        // Update gear order status
+        await prisma.gearOrder.update({
+          where: { id: gearOrder.id },
+          data: { status: 'paid' }
+        });
+
+        res.json({
+          success: true,
+          message: 'Payment processed successfully',
+          gearOrder: { ...gearOrder, status: 'paid' },
+          paymentResult
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: paymentResult.error || 'Payment failed',
+          paymentResult
+        });
+      }
+
+    } catch (error) {
+      console.error('Error processing gear order payment:', error);
+      res.status(500).json({ success: false, message: 'Failed to process payment' });
     }
   }
 

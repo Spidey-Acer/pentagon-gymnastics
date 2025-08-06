@@ -9,6 +9,7 @@ router.get('/items', GearController.getGearItems);
 
 // Protected routes (require authentication)
 router.post('/order', authenticate, GearController.createGearOrder);
+router.post('/order/payment', authenticate, GearController.processGearOrderPayment);
 router.get('/orders', authenticate, GearController.getUserOrders);
 router.get('/orders/:orderId', authenticate, GearController.getOrderById);
 

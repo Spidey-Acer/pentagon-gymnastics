@@ -12,7 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import LandingPage from "./pages/LandingPage";
 import Profile from "./pages/Profile";
 import Packages from "./pages/Packages";
-import EquipmentRental from "./pages/EquipmentRental";
+import EquipmentBooking from "./pages/EquipmentBooking";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
@@ -55,7 +55,7 @@ function App(): React.ReactElement {
                   path="/equipment"
                   element={
                     <ProtectedRoute>
-                      <EquipmentRental />
+                      <EquipmentBooking />
                     </ProtectedRoute>
                   }
                 />

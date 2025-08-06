@@ -9,6 +9,7 @@ import adminRoutes from "./routes/adminRoutes";
 import webhookRoutes from "./routes/webhookRoutes";
 import transactionRoutes from "./routes/transactionRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
+import maintenanceRoutes from "./routes/maintenanceRoutes";
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/webhooks", webhookRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import api from "../services/api";
 import { useToast } from "../contexts/ToastContext";
@@ -25,12 +25,11 @@ interface RentalCartItem {
   totalPrice: number;
 }
 
-export default function EquipmentRental() {
+export default function EquipmentBooking() {
   const [showPackageModal, setShowPackageModal] = useState(false);
   const [cart, setCart] = useState<RentalCartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const queryClient = useQueryClient();
-  const { showSuccess, showError } = useToast();
+  const { showSuccess } = useToast();
   
   // Use subscription hook for access control
   const { subscription: userSubscription, hasActiveSubscription } = useSubscription();
