@@ -23,7 +23,7 @@
 
 ## 🚀 How to Login as Admin
 
-1. **Go to the login page**: `https://your-frontend-url.onrender.com/login`
+1. **Go to the login page**: `https://abc-gymnastics-1.onrender.com/login`
 2. **Enter admin credentials** (see above)
 3. **You'll be redirected to**: `/admin` (Admin Dashboard)
 4. **Look for the purple "Admin" button** in the navigation bar
