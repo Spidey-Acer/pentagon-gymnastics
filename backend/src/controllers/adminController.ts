@@ -5,9 +5,11 @@ import { prisma } from "../lib/prisma";
 export const getAnalyticsReport = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
-    
+
     // Set default date range if not provided (last 30 days)
-    const start = startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const start = startDate
+      ? new Date(startDate as string)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate as string) : new Date();
 
     const [
@@ -18,35 +20,35 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
       paymentAnalysis,
       userGrowth,
       classUtilization,
-      topCustomers
+      topCustomers,
     ] = await Promise.all([
       // Customers by package
       prisma.subscription.groupBy({
-        by: ['packageId'],
+        by: ["packageId"],
         where: {
-          status: 'active',
+          status: "active",
           createdAt: {
             gte: start,
-            lte: end
-          }
+            lte: end,
+          },
         },
         _count: { id: true },
-        _sum: { 
-          proteinSupplementPrice: true 
-        }
+        _sum: {
+          proteinSupplementPrice: true,
+        },
       }),
 
       // Total income analysis (using simulated payments)
       prisma.simulatedPayment.aggregate({
         where: {
-          status: 'completed',
+          status: "succeeded",
           createdAt: {
             gte: start,
-            lte: end
-          }
+            lte: end,
+          },
         },
         _sum: { amount: true },
-        _count: { id: true }
+        _count: { id: true },
       }),
 
       // Equipment purchases and orders
@@ -54,19 +56,19 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
         where: {
           createdAt: {
             gte: start,
-            lte: end
-          }
+            lte: end,
+          },
         },
         include: {
           items: {
             include: {
-              gearItem: true
-            }
+              gearItem: true,
+            },
           },
           user: {
-            select: { email: true, forename: true, surname: true }
-          }
-        }
+            select: { email: true, forename: true, surname: true },
+          },
+        },
       }),
 
       // Subscription revenue breakdown
@@ -74,51 +76,51 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
         where: {
           createdAt: {
             gte: start,
-            lte: end
-          }
+            lte: end,
+          },
         },
         include: {
           package: true,
           user: {
-            select: { email: true, forename: true, surname: true }
+            select: { email: true, forename: true, surname: true },
           },
           simulatedPayments: {
-            where: { status: 'completed' }
-          }
-        }
+            where: { status: "succeeded" },
+          },
+        },
       }),
 
       // Payment status analysis (using simulated payments)
       prisma.simulatedPayment.groupBy({
-        by: ['status', 'paymentType'],
+        by: ["status", "paymentType"],
         where: {
           createdAt: {
             gte: start,
-            lte: end
-          }
+            lte: end,
+          },
         },
         _sum: { amount: true },
-        _count: { id: true }
+        _count: { id: true },
       }),
 
       // User growth over time
       prisma.user.groupBy({
-        by: ['createdAt'],
+        by: ["createdAt"],
         where: {
           createdAt: {
             gte: start,
-            lte: end
-          }
+            lte: end,
+          },
         },
-        _count: { id: true }
+        _count: { id: true },
       }),
 
       // Class utilization rates
       prisma.session.findMany({
         include: {
           class: true,
-          _count: { select: { bookings: true } }
-        }
+          _count: { select: { bookings: true } },
+        },
       }),
 
       // Top customers by spending
@@ -127,27 +129,27 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
           subscriptions: {
             include: {
               payments: {
-                where: { 
-                  status: 'succeeded',
+                where: {
+                  status: "succeeded",
                   createdAt: {
                     gte: start,
-                    lte: end
-                  }
-                }
-              }
-            }
+                    lte: end,
+                  },
+                },
+              },
+            },
           },
           gearOrders: {
             where: {
-              status: 'paid',
+              status: "paid",
               createdAt: {
                 gte: start,
-                lte: end
-              }
-            }
-          }
-        }
-      })
+                lte: end,
+              },
+            },
+          },
+        },
+      }),
     ]);
 
     // Get package details for customer breakdown
@@ -158,17 +160,17 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
     }, {} as Record<number, any>);
 
     // Process customer by package data
-    const customersData = customersByPackage.map(item => ({
-      package: packageMap[item.packageId] || { name: 'Unknown', price: 0 },
+    const customersData = customersByPackage.map((item) => ({
+      package: packageMap[item.packageId] || { name: "Unknown", price: 0 },
       customerCount: item._count.id,
-      proteinSupplementRevenue: item._sum.proteinSupplementPrice || 0
+      proteinSupplementRevenue: item._sum.proteinSupplementPrice || 0,
     }));
 
     // Calculate equipment revenue and popular items
     let totalEquipmentRevenue = 0;
     const equipmentStats = equipmentOrders.reduce((acc, order) => {
       totalEquipmentRevenue += order.totalAmount;
-      order.items.forEach(item => {
+      order.items.forEach((item) => {
         const itemName = item.gearItem.name;
         if (!acc[itemName]) {
           acc[itemName] = { quantity: 0, revenue: 0 };
@@ -177,37 +179,49 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
         acc[itemName].revenue += item.unitPrice * item.quantity;
       });
       return acc;
-    }, {} as Record<string, { quantity: number, revenue: number }>);
+    }, {} as Record<string, { quantity: number; revenue: number }>);
 
     // Calculate top spending customers
     const topSpendingCustomers = topCustomers
-      .map(user => {
-        const subscriptionSpending = user.subscriptions.reduce((sum, sub) => 
-          sum + sub.payments.reduce((paySum, payment) => paySum + payment.amount, 0), 0);
-        const gearSpending = user.gearOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-        
+      .map((user) => {
+        const subscriptionSpending = user.subscriptions.reduce(
+          (sum, sub) =>
+            sum +
+            sub.payments.reduce(
+              (paySum, payment) => paySum + payment.amount,
+              0
+            ),
+          0
+        );
+        const gearSpending = user.gearOrders.reduce(
+          (sum, order) => sum + order.totalAmount,
+          0
+        );
+
         return {
           user: {
             email: user.email,
-            name: `${user.forename} ${user.surname}`
+            name: `${user.forename} ${user.surname}`,
           },
           totalSpending: subscriptionSpending + gearSpending,
           subscriptionSpending,
-          gearSpending
+          gearSpending,
         };
       })
-      .filter(customer => customer.totalSpending > 0)
+      .filter((customer) => customer.totalSpending > 0)
       .sort((a, b) => b.totalSpending - a.totalSpending)
       .slice(0, 10);
 
     // Process class utilization
-    const classUtilizationData = classUtilization.map(session => ({
+    const classUtilizationData = classUtilization.map((session) => ({
       id: session.id,
       className: session.class.name,
       timeSlot: session.timeSlot,
       capacity: session.capacity,
       bookings: session._count.bookings,
-      utilizationRate: Math.round((session._count.bookings / session.capacity) * 100)
+      utilizationRate: Math.round(
+        (session._count.bookings / session.capacity) * 100
+      ),
     }));
 
     res.json({
@@ -216,39 +230,52 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
         totalIncome: incomeAnalysis._sum.amount || 0,
         totalPayments: incomeAnalysis._count,
         totalEquipmentRevenue,
-        totalCustomers: customersData.reduce((sum, item) => sum + item.customerCount, 0)
+        totalCustomers: customersData.reduce(
+          (sum, item) => sum + item.customerCount,
+          0
+        ),
       },
       customersByPackage: customersData,
       incomeBreakdown: {
-        subscriptionRevenue: subscriptionRevenue.reduce((sum, sub) => 
-          sum + sub.simulatedPayments.reduce((paySum: number, payment: any) => paySum + payment.amount, 0), 0),
+        subscriptionRevenue: subscriptionRevenue.reduce(
+          (sum, sub) =>
+            sum +
+            sub.simulatedPayments.reduce(
+              (paySum: number, payment: any) => paySum + payment.amount,
+              0
+            ),
+          0
+        ),
         equipmentRevenue: totalEquipmentRevenue,
-        proteinSupplementRevenue: customersData.reduce((sum, item) => sum + item.proteinSupplementRevenue, 0)
+        proteinSupplementRevenue: customersData.reduce(
+          (sum, item) => sum + item.proteinSupplementRevenue,
+          0
+        ),
       },
       equipmentAnalysis: {
         totalOrders: equipmentOrders.length,
         totalRevenue: totalEquipmentRevenue,
         popularItems: Object.entries(equipmentStats)
           .sort((a, b) => b[1].quantity - a[1].quantity)
-          .map(([name, stats]) => ({ name, ...stats }))
+          .map(([name, stats]) => ({ name, ...stats })),
       },
-      paymentAnalysis: paymentAnalysis.map(payment => ({
+      paymentAnalysis: paymentAnalysis.map((payment) => ({
         status: payment.status,
         type: payment.paymentType,
         count: payment._count.id,
-        totalAmount: payment._sum.amount || 0
+        totalAmount: payment._sum.amount || 0,
       })),
       topCustomers: topSpendingCustomers,
       classUtilization: classUtilizationData,
-      recentOrders: equipmentOrders.slice(0, 10).map(order => ({
+      recentOrders: equipmentOrders.slice(0, 10).map((order) => ({
         id: order.id,
         customer: `${order.user.forename} ${order.user.surname}`,
         email: order.user.email,
         totalAmount: order.totalAmount,
         status: order.status,
         createdAt: order.createdAt,
-        itemCount: order.items.length
-      }))
+        itemCount: order.items.length,
+      })),
     });
   } catch (error) {
     console.error("Analytics report error:", error);
@@ -266,22 +293,22 @@ export const getAdminDashboard = async (req: Request, res: Response) => {
       totalBookings,
       recentBookings,
       classPopularity,
-      sessionUtilization
+      sessionUtilization,
     ] = await Promise.all([
       // Total users (non-admin)
       prisma.user.count({
-        where: { role: "user" }
+        where: { role: "user" },
       }),
-      
+
       // Total classes
       prisma.class.count(),
-      
+
       // Total sessions
       prisma.session.count(),
-      
+
       // Total bookings
       prisma.booking.count(),
-      
+
       // Recent bookings (last 10)
       prisma.booking.findMany({
         take: 10,
@@ -289,42 +316,44 @@ export const getAdminDashboard = async (req: Request, res: Response) => {
         include: {
           user: { select: { email: true } },
           session: {
-            include: { class: { select: { name: true } } }
-          }
-        }
+            include: { class: { select: { name: true } } },
+          },
+        },
       }),
-      
+
       // Class popularity
       prisma.booking.groupBy({
         by: ["sessionId"],
         _count: {
-          id: true
+          id: true,
         },
         orderBy: {
           _count: {
-            id: "desc"
-          }
+            id: "desc",
+          },
         },
-        take: 5
+        take: 5,
       }),
-      
+
       // Session utilization rates
       prisma.session.findMany({
         include: {
           class: { select: { name: true } },
-          _count: { select: { bookings: true } }
-        }
-      })
+          _count: { select: { bookings: true } },
+        },
+      }),
     ]);
 
     // Calculate utilization rates
-    const utilizationData = sessionUtilization.map(session => ({
+    const utilizationData = sessionUtilization.map((session) => ({
       id: session.id,
       className: session.class.name,
       timeSlot: session.timeSlot,
       capacity: session.capacity,
       bookings: session._count.bookings,
-      utilizationRate: Math.round((session._count.bookings / session.capacity) * 100)
+      utilizationRate: Math.round(
+        (session._count.bookings / session.capacity) * 100
+      ),
     }));
 
     res.json({
@@ -332,11 +361,11 @@ export const getAdminDashboard = async (req: Request, res: Response) => {
         totalUsers,
         totalClasses,
         totalSessions,
-        totalBookings
+        totalBookings,
       },
       recentBookings,
       classPopularity,
-      sessionUtilization: utilizationData
+      sessionUtilization: utilizationData,
     });
   } catch (error) {
     console.error("Admin dashboard error:", error);
@@ -353,10 +382,10 @@ export const getAllUsers = async (req: Request, res: Response) => {
         email: true,
         role: true,
         _count: {
-          select: { bookings: true }
-        }
+          select: { bookings: true },
+        },
       },
-      orderBy: { id: "desc" }
+      orderBy: { id: "desc" },
     });
 
     res.json(users);
@@ -382,8 +411,8 @@ export const updateUserRole = async (req: Request, res: Response) => {
       select: {
         id: true,
         email: true,
-        role: true
-      }
+        role: true,
+      },
     });
 
     res.json(updatedUser);
@@ -415,12 +444,12 @@ export const getAllBookings = async (req: Request, res: Response) => {
         include: {
           user: { select: { email: true } },
           session: {
-            include: { class: { select: { name: true } } }
-          }
+            include: { class: { select: { name: true } } },
+          },
         },
-        orderBy: { id: "desc" }
+        orderBy: { id: "desc" },
       }),
-      prisma.booking.count({ where })
+      prisma.booking.count({ where }),
     ]);
 
     res.json({
@@ -429,8 +458,8 @@ export const getAllBookings = async (req: Request, res: Response) => {
         page: Number(page),
         limit: Number(limit),
         total,
-        totalPages: Math.ceil(total / Number(limit))
-      }
+        totalPages: Math.ceil(total / Number(limit)),
+      },
     });
   } catch (error) {
     console.error("Get bookings error:", error);
@@ -450,7 +479,7 @@ export const updateSessionCapacity = async (req: Request, res: Response) => {
 
     // Check if new capacity is less than current bookings
     const session = await prisma.session.findUnique({
-      where: { id: parseInt(sessionId) }
+      where: { id: parseInt(sessionId) },
     });
 
     if (!session) {
@@ -458,8 +487,8 @@ export const updateSessionCapacity = async (req: Request, res: Response) => {
     }
 
     if (capacity < session.bookingCount) {
-      return res.status(400).json({ 
-        error: `Cannot reduce capacity below current bookings (${session.bookingCount})` 
+      return res.status(400).json({
+        error: `Cannot reduce capacity below current bookings (${session.bookingCount})`,
       });
     }
 
@@ -467,8 +496,8 @@ export const updateSessionCapacity = async (req: Request, res: Response) => {
       where: { id: parseInt(sessionId) },
       data: { capacity: Number(capacity) },
       include: {
-        class: { select: { name: true } }
-      }
+        class: { select: { name: true } },
+      },
     });
 
     res.json(updatedSession);
@@ -488,18 +517,18 @@ export const deleteClass = async (req: Request, res: Response) => {
       // First delete all bookings for sessions of this class
       await tx.booking.deleteMany({
         where: {
-          session: { classId: parseInt(classId) }
-        }
+          session: { classId: parseInt(classId) },
+        },
       });
 
       // Then delete all sessions for this class
       await tx.session.deleteMany({
-        where: { classId: parseInt(classId) }
+        where: { classId: parseInt(classId) },
       });
 
       // Finally delete the class
       await tx.class.delete({
-        where: { id: parseInt(classId) }
+        where: { id: parseInt(classId) },
       });
     });
 
@@ -523,85 +552,85 @@ export const getFinancialOverview = async (req: Request, res: Response) => {
       simulatedTotalPayments,
       simulatedFailedPayments,
       simulatedPendingPayments,
-      simulatedRevenueByDay
+      simulatedRevenueByDay,
     ] = await Promise.all([
       // Simulated Subscription revenue
       prisma.simulatedPayment.aggregate({
         where: {
-          paymentType: 'subscription',
-          status: 'completed',
-          createdAt: { gte: startDate }
+          paymentType: "subscription",
+          status: "succeeded",
+          createdAt: { gte: startDate },
         },
         _sum: { amount: true },
-        _count: { id: true }
+        _count: { id: true },
       }),
 
       // Simulated Equipment revenue
       prisma.simulatedPayment.aggregate({
         where: {
-          paymentType: 'gear',
-          status: 'completed',
-          createdAt: { gte: startDate }
+          paymentType: "gear",
+          status: "succeeded",
+          createdAt: { gte: startDate },
         },
         _sum: { amount: true },
-        _count: { id: true }
+        _count: { id: true },
       }),
 
       // Total successful simulated payments
       prisma.simulatedPayment.aggregate({
         where: {
-          status: 'completed',
-          createdAt: { gte: startDate }
+          status: "succeeded",
+          createdAt: { gte: startDate },
         },
         _sum: { amount: true },
-        _count: { id: true }
+        _count: { id: true },
       }),
 
       // Failed simulated payments
       prisma.simulatedPayment.aggregate({
         where: {
-          status: 'failed',
-          createdAt: { gte: startDate }
+          status: "failed",
+          createdAt: { gte: startDate },
         },
         _sum: { amount: true },
-        _count: { id: true }
+        _count: { id: true },
       }),
 
       // Pending simulated payments
       prisma.simulatedPayment.aggregate({
         where: {
-          status: 'pending',
-          createdAt: { gte: startDate }
+          status: "pending",
+          createdAt: { gte: startDate },
         },
         _sum: { amount: true },
-        _count: { id: true }
+        _count: { id: true },
       }),
 
       // Revenue by day for chart (simulated payments)
       prisma.simulatedPayment.findMany({
         where: {
-          status: 'completed',
-          createdAt: { gte: startDate }
+          status: "succeeded",
+          createdAt: { gte: startDate },
         },
         select: {
           amount: true,
           createdAt: true,
-          paymentType: true
+          paymentType: true,
         },
-        orderBy: { createdAt: 'asc' }
-      })
+        orderBy: { createdAt: "asc" },
+      }),
     ]);
 
     // Group revenue by day
     const revenueChart = simulatedRevenueByDay.reduce((acc, payment) => {
-      const date = payment.createdAt.toISOString().split('T')[0];
+      const date = payment.createdAt.toISOString().split("T")[0];
       if (!acc[date]) {
         acc[date] = { date, total: 0, subscription: 0, gear: 0 };
       }
       acc[date].total += payment.amount;
-      if (payment.paymentType === 'subscription') {
+      if (payment.paymentType === "subscription") {
         acc[date].subscription += payment.amount;
-      } else if (payment.paymentType === 'gear') {
+      } else if (payment.paymentType === "gear") {
         acc[date].gear += payment.amount;
       }
       return acc;
@@ -616,14 +645,14 @@ export const getFinancialOverview = async (req: Request, res: Response) => {
         totalTransactions: simulatedTotalPayments._count || 0,
         failedPayments: {
           count: simulatedFailedPayments._count || 0,
-          amount: simulatedFailedPayments._sum.amount || 0
+          amount: simulatedFailedPayments._sum.amount || 0,
         },
         pendingPayments: {
           count: simulatedPendingPayments._count || 0,
-          amount: simulatedPendingPayments._sum.amount || 0
-        }
+          amount: simulatedPendingPayments._sum.amount || 0,
+        },
       },
-      revenueChart: Object.values(revenueChart)
+      revenueChart: Object.values(revenueChart),
     });
   } catch (error) {
     console.error("Financial overview error:", error);

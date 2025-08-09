@@ -6,7 +6,7 @@ import { requireAdmin } from '../middleware/adminMiddleware';
 const router = Router();
 
 // Test card management (development only)
-router.post('/test-cards/initialize', PaymentController.initializeTestCards);
+router.post('/test-cards/initialize', authenticate, requireAdmin, PaymentController.initializeTestCards);
 router.get('/test-cards', PaymentController.getTestCards);
 
 // Payment processing
