@@ -12,7 +12,27 @@ router.get("/", async (_req, res) => {
       where: { isActive: true },
       orderBy: { name: "asc" },
     });
-    res.json(items);
+
+    // Map to rental-friendly shape expected by frontend EquipmentBooking page
+    const mapped = items.map((i) => {
+      const baseDay = Math.max(1, Number.isFinite(i.price) ? (i.price as number) : 1);
+      return {
+        id: i.id,
+        name: i.name,
+        description: i.description,
+        category: i.category || "equipment",
+        imageUrl: i.imageUrl || undefined,
+        // Derived rental prices (simple heuristics)
+        pricePerDay: baseDay,
+        pricePerWeek: Math.round(baseDay * 6 * 100) / 100,
+        pricePerMonth: Math.round(baseDay * 20 * 100) / 100,
+        // Stock and discount helpers
+        availableStock: i.stock ?? 0,
+        discountPercentage: 10,
+      };
+    });
+
+    res.json(mapped);
   } catch (error) {
     console.error("Error fetching gear items (array):", error);
     res.status(500).json([]);
