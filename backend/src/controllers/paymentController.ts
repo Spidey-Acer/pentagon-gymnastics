@@ -23,7 +23,16 @@ export class PaymentController {
   // Get available test cards (for development/testing)
   static async getTestCards(req: Request, res: Response) {
     try {
-      const cards = await SimulatedPaymentService.getTestCards();
+      let cards = await SimulatedPaymentService.getTestCards();
+      // Auto-initialize in environments where seed didn't run
+      if (!cards || cards.length === 0) {
+        try {
+          await SimulatedPaymentService.initializeTestCards();
+          cards = await SimulatedPaymentService.getTestCards();
+        } catch (e) {
+          console.warn("Auto-initialize test cards failed:", e);
+        }
+      }
       // Mask card numbers for security
       const maskedCards = cards.map((card) => ({
         ...card,
