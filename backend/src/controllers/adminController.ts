@@ -128,7 +128,7 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
         include: {
           subscriptions: {
             include: {
-              payments: {
+              simulatedPayments: {
                 where: {
                   status: "succeeded",
                   createdAt: {
@@ -185,10 +185,10 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
     const topSpendingCustomers = topCustomers
       .map((user) => {
         const subscriptionSpending = user.subscriptions.reduce(
-          (sum, sub) =>
+          (sum, sub: any) =>
             sum +
-            sub.payments.reduce(
-              (paySum, payment) => paySum + payment.amount,
+            (sub.simulatedPayments || []).reduce(
+              (paySum: number, payment: any) => paySum + (payment.amount || 0),
               0
             ),
           0
@@ -228,7 +228,7 @@ export const getAnalyticsReport = async (req: Request, res: Response) => {
       reportPeriod: { startDate: start, endDate: end },
       summary: {
         totalIncome: incomeAnalysis._sum.amount || 0,
-        totalPayments: incomeAnalysis._count,
+        totalPayments: (incomeAnalysis as any)._count?.id || 0,
         totalEquipmentRevenue,
         totalCustomers: customersData.reduce(
           (sum, item) => sum + item.customerCount,
@@ -642,13 +642,13 @@ export const getFinancialOverview = async (req: Request, res: Response) => {
         totalRevenue: simulatedTotalPayments._sum.amount || 0,
         subscriptionRevenue: simulatedSubscriptionRevenue._sum.amount || 0,
         equipmentRevenue: simulatedEquipmentRevenue._sum.amount || 0,
-        totalTransactions: simulatedTotalPayments._count || 0,
+        totalTransactions: (simulatedTotalPayments as any)._count?.id || 0,
         failedPayments: {
-          count: simulatedFailedPayments._count || 0,
+          count: (simulatedFailedPayments as any)._count?.id || 0,
           amount: simulatedFailedPayments._sum.amount || 0,
         },
         pendingPayments: {
-          count: simulatedPendingPayments._count || 0,
+          count: (simulatedPendingPayments as any)._count?.id || 0,
           amount: simulatedPendingPayments._sum.amount || 0,
         },
       },
