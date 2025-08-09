@@ -3,6 +3,7 @@ import api from "../services/api";
 import Recommendation from "../components/Recommendation";
 import { useState, useEffect } from "react";
 import { useToast } from "../contexts/ToastContext";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 interface BookingData {
   id: number;
@@ -20,6 +21,8 @@ export default function Dashboard() {
   const [selectedBookings, setSelectedBookings] = useState<Set<number>>(
     new Set()
   );
+  const [showClearAllDialog, setShowClearAllDialog] = useState(false);
+  const [showClearSelectedDialog, setShowClearSelectedDialog] = useState(false);
   const queryClient = useQueryClient();
   const { showSuccess, showError, showWarning } = useToast();
 
@@ -48,6 +51,7 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookedSessions"] });
       setSelectedBookings(new Set());
+      setShowClearAllDialog(false);
       showSuccess("Bookings Cleared", "All bookings cleared successfully!");
     },
     onError: (error) => {
@@ -58,34 +62,21 @@ export default function Dashboard() {
 
   const clearSelectedBookingsMutation = useMutation({
     mutationFn: (bookingIds: number[]) =>
-      Promise.all(
-        bookingIds.map((id) => api.delete(`/sessions/bookings/${id}`))
-      ),
+      Promise.all(bookingIds.map((id) => api.delete(`/sessions/bookings/${id}`))),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookedSessions"] });
       setSelectedBookings(new Set());
-      showSuccess(
-        "Selected Cleared",
-        "Selected bookings cleared successfully!"
-      );
+      setShowClearSelectedDialog(false);
+      showSuccess("Selected Cleared", "Selected bookings cleared successfully!");
     },
     onError: (error) => {
       console.error("Error clearing selected bookings:", error);
-      showError(
-        "Clear Failed",
-        "Failed to clear selected bookings. Please try again."
-      );
+      showError("Clear Failed", "Failed to clear selected bookings. Please try again.");
     },
   });
 
   const handleClearAllBookings = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to clear all your booked sessions? This action cannot be undone."
-      )
-    ) {
-      clearAllBookingsMutation.mutate();
-    }
+    setShowClearAllDialog(true);
   };
 
   const handleClearSelectedBookings = () => {
@@ -93,14 +84,7 @@ export default function Dashboard() {
       showWarning("No Selection", "Please select bookings to clear.");
       return;
     }
-
-    if (
-      window.confirm(
-        `Are you sure you want to clear ${selectedBookings.size} selected booking(s)? This action cannot be undone.`
-      )
-    ) {
-      clearSelectedBookingsMutation.mutate(Array.from(selectedBookings));
-    }
+    setShowClearSelectedDialog(true);
   };
 
   const handleBookingSelection = (bookingId: number) => {
@@ -339,6 +323,31 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialogs */}
+      <ConfirmDialog
+        isOpen={showClearAllDialog}
+        title="Clear All Bookings"
+        message="Are you sure you want to clear all your booked sessions? This action cannot be undone."
+        confirmText={clearAllBookingsMutation.isPending ? "Clearing..." : "Clear All"}
+        cancelText="Cancel"
+        loading={clearAllBookingsMutation.isPending}
+        variant="danger"
+        onConfirm={() => clearAllBookingsMutation.mutate()}
+        onCancel={() => setShowClearAllDialog(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={showClearSelectedDialog}
+        title="Clear Selected Bookings"
+        message={`Are you sure you want to clear ${selectedBookings.size} selected booking(s)? This action cannot be undone.`}
+        confirmText={clearSelectedBookingsMutation.isPending ? "Clearing..." : "Clear Selected"}
+        cancelText="Cancel"
+        loading={clearSelectedBookingsMutation.isPending}
+        variant="danger"
+        onConfirm={() => clearSelectedBookingsMutation.mutate(Array.from(selectedBookings))}
+        onCancel={() => setShowClearSelectedDialog(false)}
+      />
     </>
   );
 }
