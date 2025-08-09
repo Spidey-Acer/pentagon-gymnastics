@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "../contexts/ToastContext";
+import api from "../services/api";
 
 interface PaymentFormProps {
   amount: number;
@@ -36,7 +37,7 @@ export default function SimulatedPaymentForm({
   const [paymentStatus, setPaymentStatus] = useState<
     "idle" | "processing" | "success" | "failed"
   >("idle");
-  const [paymentId, setPaymentId] = useState<number | null>(null);
+  // Payment ID is tracked only during status checks; no need to store in state
   const [statusMessage, setStatusMessage] = useState<string>("");
   const { showSuccess, showError } = useToast();
   const statusCheckInterval = useRef<number | null>(null);
@@ -58,13 +59,7 @@ export default function SimulatedPaymentForm({
 
     statusCheckInterval.current = setInterval(async () => {
       try {
-        const response = await fetch(`/api/payments/status/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-
-        const result = await response.json();
+        const { data: result } = await api.get(`/payments/status/${id}`);
 
         if (result.success) {
           setPaymentStatus(result.status);
@@ -108,11 +103,12 @@ export default function SimulatedPaymentForm({
   // Load test cards
   const loadTestCards = async () => {
     try {
-      const response = await fetch("/api/payments/test-cards");
-      const data = await response.json();
+      const { data } = await api.get("/payments/test-cards");
       if (data.success) {
         setTestCards(data.cards);
         setShowTestCards(true);
+      } else {
+        console.error("Failed to load test cards:", data.error);
       }
     } catch (error) {
       console.error("Error loading test cards:", error);
@@ -147,23 +143,17 @@ export default function SimulatedPaymentForm({
         };
       } else {
         // Using custom card (validate first)
-        const validateResponse = await fetch("/api/payments/validate-card", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
+        const { data: validateResult } = await api.post(
+          "/payments/validate-card",
+          {
             cardNumber: customCard.cardNumber,
             cardholderName: customCard.cardholderName,
             expiryMonth: parseInt(customCard.expiryMonth),
             expiryYear: parseInt(customCard.expiryYear),
             cvv: customCard.cvv,
             cardType: "visa", // Default for custom cards
-          }),
-        });
-
-        const validateResult = await validateResponse.json();
+          }
+        );
         if (!validateResult.success) {
           showError("Card Validation Failed", validateResult.error);
           setLoading(false);
@@ -180,21 +170,11 @@ export default function SimulatedPaymentForm({
 
       // Process the payment
       const endpoint = subscriptionId
-        ? "/api/payments/subscription"
-        : "/api/payments/gear";
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(paymentData),
-      });
-
-      const result = await response.json();
+        ? "/payments/subscription"
+        : "/payments/gear";
+      const { data: result } = await api.post(endpoint, paymentData);
 
       if (result.success) {
-        setPaymentId(result.paymentId);
         setStatusMessage("Payment initiated. Checking status...");
         // Start checking payment status every 2 seconds
         startStatusCheck(result.paymentId);
