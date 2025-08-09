@@ -44,7 +44,7 @@ export default function Packages() {
   // Create subscription mutation
   const createSubscriptionMutation = useMutation({
     mutationFn: async ({ packageId, proteinSupplement }: { packageId: number; proteinSupplement: boolean }) => {
-      const response = await api.post('/subscriptions/subscription', {
+      const response = await api.post('/subscriptions/create', {
         packageId,
         proteinSupplement,
       });
@@ -52,11 +52,24 @@ export default function Packages() {
     },
     onSuccess: (data) => {
       showSuccess('Subscription created!', 'Redirecting to payment...');
-      console.log('Payment Intent Client Secret:', data.clientSecret);
-      queryClient.invalidateQueries({ queryKey: ['user-subscription'] });
+      console.log('Subscription created successfully:', data);
+      
+      // Invalidate all related queries to ensure sync
       queryClient.invalidateQueries({ queryKey: ['userSubscription'] });
+      queryClient.invalidateQueries({ queryKey: ['user-subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['packages'] });
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      
+      // Force refetch of subscription data
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['userSubscription'] });
+      }, 500);
+      
+      setIsProcessing(false);
+      setSelectedPackage(null);
     },
     onError: (error: unknown) => {
+      console.error('Subscription creation failed:', error);
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create subscription';
       showError('Subscription Error', errorMessage);
       setIsProcessing(false);

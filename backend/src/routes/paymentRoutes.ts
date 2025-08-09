@@ -17,6 +17,11 @@ router.post('/gear', authenticate, PaymentController.processGearPayment);
 router.post('/validate-card', authenticate, PaymentController.validateCard);
 
 // Payment details and history
+router.get(
+  "/status/:paymentId",
+  authenticate,
+  PaymentController.getPaymentStatus
+);
 router.get('/payment/:paymentId', authenticate, PaymentController.getPayment);
 router.get('/order-payments', authenticate, PaymentController.getOrderPayments);
 

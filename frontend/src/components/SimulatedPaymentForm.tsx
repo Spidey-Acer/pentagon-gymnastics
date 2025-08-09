@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useToast } from '../contexts/ToastContext';
+import { useState, useEffect, useRef } from "react";
+import { useToast } from "../contexts/ToastContext";
 
 interface PaymentFormProps {
   amount: number;
@@ -27,49 +27,115 @@ export default function SimulatedPaymentForm({
   onPaymentSuccess,
   onPaymentCancel,
   subscriptionId,
-  gearOrderId
+  gearOrderId,
 }: PaymentFormProps) {
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
   const [testCards, setTestCards] = useState<SimulatedCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [showTestCards, setShowTestCards] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<
+    "idle" | "processing" | "success" | "failed"
+  >("idle");
+  const [paymentId, setPaymentId] = useState<number | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string>("");
   const { showSuccess, showError } = useToast();
+  const statusCheckInterval = useRef<number | null>(null);
 
   // Custom card form state
-  const [customCard, setCustomCard] = useState({
-    cardNumber: '',
-    cardholderName: '',
-    expiryMonth: '',
-    expiryYear: '',
-    cvv: ''
-  });
+  const customCard = {
+    cardNumber: "",
+    cardholderName: "",
+    expiryMonth: "",
+    expiryYear: "",
+    cvv: "",
+  };
+
+  // Check payment status every 2 seconds
+  const startStatusCheck = (id: number) => {
+    if (statusCheckInterval.current) {
+      clearInterval(statusCheckInterval.current);
+    }
+
+    statusCheckInterval.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/payments/status/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          setPaymentStatus(result.status);
+          setStatusMessage(
+            result.message || `Payment status: ${result.status}`
+          );
+
+          if (result.status === "success" || result.status === "failed") {
+            clearInterval(statusCheckInterval.current!);
+
+            if (result.status === "success") {
+              showSuccess(
+                "Payment Completed",
+                "Your payment has been processed successfully!"
+              );
+              setTimeout(() => onPaymentSuccess(id), 1000);
+            } else {
+              showError(
+                "Payment Failed",
+                result.message || "Payment could not be processed"
+              );
+              setLoading(false);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking payment status:", error);
+      }
+    }, 2000); // Check every 2 seconds
+  };
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (statusCheckInterval.current) {
+        clearInterval(statusCheckInterval.current);
+      }
+    };
+  }, []);
 
   // Load test cards
   const loadTestCards = async () => {
     try {
-      const response = await fetch('/api/payments/test-cards');
+      const response = await fetch("/api/payments/test-cards");
       const data = await response.json();
       if (data.success) {
         setTestCards(data.cards);
         setShowTestCards(true);
       }
     } catch (error) {
-      console.error('Error loading test cards:', error);
+      console.error("Error loading test cards:", error);
     }
   };
 
   // Process payment
   const processPayment = async () => {
     if (!selectedCardId && !customCard.cardNumber) {
-      showError('Error', 'Please select a test card or enter custom card details');
+      showError(
+        "Error",
+        "Please select a test card or enter custom card details"
+      );
       return;
     }
 
     setLoading(true);
+    setPaymentStatus("processing");
+    setStatusMessage("Processing payment...");
 
     try {
       let paymentData;
-      
+
       if (selectedCardId) {
         // Using test card
         paymentData = {
@@ -77,15 +143,15 @@ export default function SimulatedPaymentForm({
           amount,
           description,
           subscriptionId,
-          gearOrderId
+          gearOrderId,
         };
       } else {
         // Using custom card (validate first)
-        const validateResponse = await fetch('/api/payments/validate-card', {
-          method: 'POST',
+        const validateResponse = await fetch("/api/payments/validate-card", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({
             cardNumber: customCard.cardNumber,
@@ -93,46 +159,57 @@ export default function SimulatedPaymentForm({
             expiryMonth: parseInt(customCard.expiryMonth),
             expiryYear: parseInt(customCard.expiryYear),
             cvv: customCard.cvv,
-            cardType: 'visa' // Default for custom cards
-          })
+            cardType: "visa", // Default for custom cards
+          }),
         });
 
         const validateResult = await validateResponse.json();
         if (!validateResult.success) {
-          showError('Card Validation Failed', validateResult.error);
+          showError("Card Validation Failed", validateResult.error);
           setLoading(false);
+          setPaymentStatus("failed");
           return;
         }
 
         // For demo purposes, we'll create a temporary card
-        showError('Demo Mode', 'Please use one of the test cards for the demo');
+        showError("Demo Mode", "Please use one of the test cards for the demo");
         setLoading(false);
+        setPaymentStatus("failed");
         return;
       }
 
       // Process the payment
-      const endpoint = subscriptionId ? '/api/payments/subscription' : '/api/payments/gear';
+      const endpoint = subscriptionId
+        ? "/api/payments/subscription"
+        : "/api/payments/gear";
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(paymentData)
+        body: JSON.stringify(paymentData),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        showSuccess('Payment Successful', result.message);
-        onPaymentSuccess(result.paymentId);
+        setPaymentId(result.paymentId);
+        setStatusMessage("Payment initiated. Checking status...");
+        // Start checking payment status every 2 seconds
+        startStatusCheck(result.paymentId);
       } else {
-        showError('Payment Failed', result.error || 'Payment could not be processed');
+        setPaymentStatus("failed");
+        showError(
+          "Payment Failed",
+          result.error || "Payment could not be processed"
+        );
+        setLoading(false);
       }
     } catch (error) {
-      console.error('Payment error:', error);
-      showError('Error', 'Payment processing failed');
-    } finally {
+      console.error("Payment error:", error);
+      setPaymentStatus("failed");
+      showError("Error", "Payment processing failed");
       setLoading(false);
     }
   };
@@ -140,7 +217,9 @@ export default function SimulatedPaymentForm({
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Complete Payment</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Complete Payment
+        </h2>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
             <strong>Amount:</strong> £{amount.toFixed(2)}
@@ -149,6 +228,68 @@ export default function SimulatedPaymentForm({
             <strong>Description:</strong> {description}
           </p>
         </div>
+
+        {/* Payment Status Display */}
+        {paymentStatus !== "idle" && (
+          <div
+            className={`mt-4 p-4 rounded-lg border ${
+              paymentStatus === "processing"
+                ? "bg-yellow-50 border-yellow-200"
+                : paymentStatus === "success"
+                ? "bg-green-50 border-green-200"
+                : "bg-red-50 border-red-200"
+            }`}
+          >
+            <div className="flex items-center">
+              {paymentStatus === "processing" && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600 mr-2"></div>
+              )}
+              {paymentStatus === "success" && (
+                <svg
+                  className="w-4 h-4 text-green-600 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+              {paymentStatus === "failed" && (
+                <svg
+                  className="w-4 h-4 text-red-600 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+              <span
+                className={`text-sm font-medium ${
+                  paymentStatus === "processing"
+                    ? "text-yellow-800"
+                    : paymentStatus === "success"
+                    ? "text-green-800"
+                    : "text-red-800"
+                }`}
+              >
+                {statusMessage}
+              </span>
+            </div>
+
+            {paymentStatus === "processing" && (
+              <p className="text-xs text-yellow-700 mt-2">
+                🔄 Status will refresh every 2 seconds...
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Test Cards Section */}
@@ -159,20 +300,22 @@ export default function SimulatedPaymentForm({
             onClick={loadTestCards}
             className="text-blue-600 hover:text-blue-800 text-sm"
           >
-            {showTestCards ? 'Hide Test Cards' : 'Show Test Cards'}
+            {showTestCards ? "Hide Test Cards" : "Show Test Cards"}
           </button>
         </div>
 
         {showTestCards && (
           <div className="space-y-3 mb-6">
-            <p className="text-sm text-gray-600">Select a test card for demo purposes:</p>
+            <p className="text-sm text-gray-600">
+              Select a test card for demo purposes:
+            </p>
             {testCards.map((card) => (
               <div
                 key={card.id}
                 className={`border rounded-lg p-4 cursor-pointer transition-colors ${
                   selectedCardId === card.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => setSelectedCardId(card.id)}
               >
@@ -180,24 +323,35 @@ export default function SimulatedPaymentForm({
                   <div>
                     <div className="flex items-center space-x-2">
                       <span className="font-medium">{card.cardNumber}</span>
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        card.cardType === 'visa' ? 'bg-blue-100 text-blue-800' :
-                        card.cardType === 'mastercard' ? 'bg-red-100 text-red-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded ${
+                          card.cardType === "visa"
+                            ? "bg-blue-100 text-blue-800"
+                            : card.cardType === "mastercard"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
                         {card.cardType.toUpperCase()}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600">{card.cardholderName}</p>
+                    <p className="text-sm text-gray-600">
+                      {card.cardholderName}
+                    </p>
                     <p className="text-sm text-gray-500">
-                      Expires: {card.expiryMonth.toString().padStart(2, '0')}/{card.expiryYear}
+                      Expires: {card.expiryMonth.toString().padStart(2, "0")}/
+                      {card.expiryYear}
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className={`px-2 py-1 text-xs rounded ${
-                      card.isValid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {card.isValid ? 'Valid' : 'Will Decline'}
+                    <div
+                      className={`px-2 py-1 text-xs rounded ${
+                        card.isValid
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {card.isValid ? "Valid" : "Will Decline"}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       Balance: £{card.balance.toFixed(2)}
@@ -213,7 +367,8 @@ export default function SimulatedPaymentForm({
         {!showTestCards && (
           <div className="border border-gray-200 rounded-lg p-4">
             <p className="text-sm text-gray-600 mb-4">
-              For this demo, please use the test cards above. Custom card entry is not available in demo mode.
+              For this demo, please use the test cards above. Custom card entry
+              is not available in demo mode.
             </p>
             <button
               onClick={loadTestCards}
@@ -253,13 +408,22 @@ export default function SimulatedPaymentForm({
       {/* Demo Notice */}
       <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex">
-          <svg className="w-5 h-5 text-yellow-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          <svg
+            className="w-5 h-5 text-yellow-400 mr-2"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
           </svg>
           <div>
             <h4 className="text-sm font-medium text-yellow-800">Demo Mode</h4>
             <p className="text-sm text-yellow-700">
-              This is a simulated payment system for demonstration purposes. No real money will be charged.
+              This is a simulated payment system for demonstration purposes. No
+              real money will be charged.
             </p>
           </div>
         </div>

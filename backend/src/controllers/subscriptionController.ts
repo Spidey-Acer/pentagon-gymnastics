@@ -51,10 +51,20 @@ export class SubscriptionController {
         }
       });
 
-      res.json({ success: true, subscription });
+      // Always return a response, even if subscription is null
+      res.json({ 
+        success: true, 
+        subscription: subscription || null,
+        hasActiveSubscription: subscription?.status === 'active' || false
+      });
     } catch (error) {
       console.error('Error fetching user subscription:', error);
-      res.status(500).json({ success: false, message: 'Failed to fetch subscription' });
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch subscription',
+        subscription: null,
+        hasActiveSubscription: false 
+      });
     }
   }
 
@@ -68,34 +78,54 @@ export class SubscriptionController {
         return res.status(401).json({ success: false, message: 'User not authenticated' });
       }
 
-      // Check if user already has active subscription
-      const existingSubscription = await prisma.subscription.findUnique({
-        where: { userId }
-      });
-
-      if (existingSubscription && existingSubscription.status === 'active') {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'User already has an active subscription' 
-        });
+      if (!packageId) {
+        return res.status(400).json({ success: false, message: 'Package ID is required' });
       }
 
-      // Get package details
-      const package_ = await prisma.package.findUnique({
-        where: { id: packageId }
+      // Validate package exists and is active
+      const package_ = await prisma.package.findFirst({
+        where: { 
+          id: packageId,
+          isActive: true
+        },
+        include: {
+          packageClasses: {
+            include: {
+              class: true
+            }
+          }
+        }
       });
 
       if (!package_) {
-        return res.status(404).json({ success: false, message: 'Package not found' });
+        return res
+          .status(404)
+          .json({ success: false, message: "Package not found or inactive" });
       }
 
       // Get user details
       const user = await prisma.user.findUnique({
-        where: { id: userId }
+        where: { id: userId },
       });
 
       if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
+
+      // Check if user already has active subscription
+      const existingSubscription = await prisma.subscription.findUnique({
+        where: { userId },
+      });
+
+      if (existingSubscription && existingSubscription.status === "active") {
+        return res.status(400).json({
+          success: false,
+          message:
+            "User already has an active subscription. Use switch package instead.",
+          existingSubscription,
+        });
       }
 
       // Calculate total amount
@@ -109,17 +139,58 @@ export class SubscriptionController {
       const endDate = new Date();
       endDate.setDate(startDate.getDate() + 30); // 30-day period
 
-      const subscription = await prisma.subscription.create({
-        data: {
-          userId,
-          packageId,
-          status: 'pending', // Will be updated when payment is processed
-          startDate,
-          endDate,
-          proteinSupplement,
-          proteinSupplementPrice: proteinSupplement ? 50 : 0
-        }
-      });
+      let subscription;
+
+      if (existingSubscription && existingSubscription.status !== "active") {
+        // Update existing non-active subscription
+        subscription = await prisma.subscription.update({
+          where: { id: existingSubscription.id },
+          data: {
+            packageId,
+            status: "pending",
+            startDate,
+            endDate,
+            proteinSupplement,
+            proteinSupplementPrice: proteinSupplement ? 50 : 0,
+            updatedAt: new Date(),
+          },
+          include: {
+            package: {
+              include: {
+                packageClasses: {
+                  include: {
+                    class: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      } else {
+        // Create new subscription
+        subscription = await prisma.subscription.create({
+          data: {
+            userId,
+            packageId,
+            status: "pending", // Will be updated when payment is processed
+            startDate,
+            endDate,
+            proteinSupplement,
+            proteinSupplementPrice: proteinSupplement ? 50 : 0,
+          },
+          include: {
+            package: {
+              include: {
+                packageClasses: {
+                  include: {
+                    class: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
 
       // Log transaction
       await TransactionService.logTransaction({
@@ -149,7 +220,30 @@ export class SubscriptionController {
 
     } catch (error) {
       console.error('Error creating subscription:', error);
-      res.status(500).json({ success: false, message: 'Failed to create subscription' });
+      
+      // Provide more specific error messaging
+      if (error instanceof Error) {
+        if (error.message.includes('Unique constraint')) {
+          return res.status(409).json({ 
+            success: false, 
+            message: 'A subscription already exists for this user. Please refresh and try again.',
+            code: 'DUPLICATE_SUBSCRIPTION'
+          });
+        }
+        if (error.message.includes('Foreign key constraint')) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Invalid package or user reference.',
+            code: 'INVALID_REFERENCE'
+          });
+        }
+      }
+
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to create subscription. Please try again.',
+        code: 'INTERNAL_ERROR'
+      });
     }
   }
 

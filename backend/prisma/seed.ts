@@ -171,6 +171,76 @@ async function main() {
     "🏃‍♀️ Created 8 fitness classes with morning, afternoon, evening sessions"
   );
   console.log("👨‍💼 Admin login: admin@pentagongym.com / admin123");
+
+  // Initialize test payment cards
+  const testCards = [
+    {
+      cardNumber: "4111111111111111", // Visa - Valid
+      cardholderName: "John Doe",
+      expiryMonth: 12,
+      expiryYear: 2027,
+      cvv: "123",
+      cardType: "visa",
+      isValid: true,
+      balance: 10000.0,
+    },
+    {
+      cardNumber: "5555555555554444", // Mastercard - Valid
+      cardholderName: "Jane Smith",
+      expiryMonth: 6,
+      expiryYear: 2026,
+      cvv: "456",
+      cardType: "mastercard",
+      isValid: true,
+      balance: 5000.0,
+    },
+    {
+      cardNumber: "4000000000000002", // Visa - Declined
+      cardholderName: "Bob Johnson",
+      expiryMonth: 3,
+      expiryYear: 2025,
+      cvv: "789",
+      cardType: "visa",
+      isValid: false,
+      balance: 100.0,
+    },
+    {
+      cardNumber: "4000000000000119", // Visa - Insufficient funds
+      cardholderName: "Alice Brown",
+      expiryMonth: 9,
+      expiryYear: 2026,
+      cvv: "321",
+      cardType: "visa",
+      isValid: true,
+      balance: 10.0,
+    },
+    {
+      cardNumber: "378282246310005", // Amex - Valid
+      cardholderName: "Charlie Wilson",
+      expiryMonth: 11,
+      expiryYear: 2028,
+      cvv: "1234",
+      cardType: "amex",
+      isValid: true,
+      balance: 15000.0,
+    },
+  ];
+
+  // Create test cards
+  for (const cardData of testCards) {
+    await prisma.simulatedCard.upsert({
+      where: { cardNumber: cardData.cardNumber },
+      update: {},
+      create: cardData,
+    });
+  }
+
+  console.log("💳 Created test payment cards:");
+  console.log("   - 4111111111111111 (Valid Visa, £10,000 balance)");
+  console.log("   - 5555555555554444 (Valid Mastercard, £5,000 balance)");
+  console.log("   - 4000000000000002 (Declined Visa)");
+  console.log("   - 4000000000000119 (Insufficient funds Visa, £10 balance)");
+  console.log("   - 378282246310005 (Valid Amex, £15,000 balance)");
 }
 
 main()

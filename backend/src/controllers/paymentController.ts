@@ -55,7 +55,7 @@ export class PaymentController {
         });
       }
 
-      // Simulate processing delay
+      // Process payment immediately without setTimeout
       const result = await SimulatedPaymentService.processPayment(
         cardId,
         amount,
@@ -75,17 +75,15 @@ export class PaymentController {
         });
       }
 
-      // Simulate realistic processing time
-      setTimeout(() => {
-        res.json({
-          success: result.success,
-          paymentId: result.paymentId,
-          error: result.error,
-          message: result.success 
-            ? 'Payment processed successfully' 
-            : `Payment failed: ${result.error}`
-        });
-      }, result.simulatedDelay * 1000);
+      // Return response immediately
+      res.json({
+        success: result.success,
+        paymentId: result.paymentId,
+        error: result.error,
+        message: result.success 
+          ? 'Payment processed successfully' 
+          : `Payment failed: ${result.error}`
+      });
 
     } catch (error) {
       console.error('Error processing subscription payment:', error);
@@ -128,17 +126,15 @@ export class PaymentController {
         });
       }
 
-      // Simulate realistic processing time
-      setTimeout(() => {
-        res.json({
-          success: result.success,
-          paymentId: result.paymentId,
-          error: result.error,
-          message: result.success 
-            ? 'Payment processed successfully' 
-            : `Payment failed: ${result.error}`
-        });
-      }, result.simulatedDelay * 1000);
+      // Return response immediately
+      res.json({
+        success: result.success,
+        paymentId: result.paymentId,
+        error: result.error,
+        message: result.success 
+          ? 'Payment processed successfully' 
+          : `Payment failed: ${result.error}`
+      });
 
     } catch (error) {
       console.error('Error processing gear payment:', error);
@@ -165,6 +161,39 @@ export class PaymentController {
       res.status(500).json({ 
         success: false, 
         error: 'Card validation failed' 
+      });
+    }
+  }
+
+  // Get payment status for real-time updates
+  static async getPaymentStatus(req: Request, res: Response) {
+    try {
+      const { paymentId } = req.params;
+      
+      const payment = await SimulatedPaymentService.getPayment(parseInt(paymentId));
+      
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          error: 'Payment not found'
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        status: payment.status,
+        paymentId: payment.id,
+        amount: payment.amount,
+        message: payment.status === 'succeeded' ? 'Payment completed successfully' :
+                payment.status === 'failed' ? 'Payment failed - insufficient funds or invalid card' :
+                payment.status === 'pending' ? 'Payment is being processed' :
+                `Payment status: ${payment.status}`
+      });
+    } catch (error) {
+      console.error('Error fetching payment status:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to fetch payment status' 
       });
     }
   }
@@ -242,17 +271,15 @@ export class PaymentController {
         amount
       );
 
-      // Simulate realistic processing time
-      setTimeout(() => {
-        res.json({
-          success: result.success,
-          refundId: result.paymentId,
-          error: result.error,
-          message: result.success 
-            ? 'Refund processed successfully' 
-            : `Refund failed: ${result.error}`
-        });
-      }, result.simulatedDelay * 1000);
+      // Return response immediately
+      res.json({
+        success: result.success,
+        refundId: result.paymentId,
+        error: result.error,
+        message: result.success 
+          ? 'Refund processed successfully' 
+          : `Refund failed: ${result.error}`
+      });
 
     } catch (error) {
       console.error('Error processing refund:', error);
