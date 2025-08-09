@@ -1,9 +1,7 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { SimulatedPaymentService } from '../services/simulatedPaymentService';
 import { AuthenticatedRequest } from '../types/express';
-
-const prisma = new PrismaClient();
 
 export class GearController {
   // Get all available gear items

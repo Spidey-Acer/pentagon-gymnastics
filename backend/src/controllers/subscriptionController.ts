@@ -1,9 +1,7 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "../lib/prisma";
 import { TransactionService } from '../services/transactionService';
 import { AuthenticatedRequest } from '../types/express';
-
-const prisma = new PrismaClient();
 
 export class SubscriptionController {
   // Get all available packages

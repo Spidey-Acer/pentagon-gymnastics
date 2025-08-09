@@ -1,23 +1,21 @@
 import { Request, Response } from 'express';
 import { SimulatedPaymentService, SimulatedCardData } from '../services/simulatedPaymentService';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 export class PaymentController {
   // Initialize test cards (for development)
   static async initializeTestCards(req: Request, res: Response) {
     try {
       await SimulatedPaymentService.initializeTestCards();
-      res.json({ 
-        success: true, 
-        message: 'Test cards initialized successfully' 
+      res.json({
+        success: true,
+        message: "Test cards initialized successfully",
       });
     } catch (error) {
-      console.error('Error initializing test cards:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to initialize test cards' 
+      console.error("Error initializing test cards:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to initialize test cards",
       });
     }
   }
@@ -27,18 +25,18 @@ export class PaymentController {
     try {
       const cards = await SimulatedPaymentService.getTestCards();
       // Mask card numbers for security
-      const maskedCards = cards.map(card => ({
+      const maskedCards = cards.map((card) => ({
         ...card,
         cardNumber: `****-****-****-${card.cardNumber.slice(-4)}`,
-        cvv: '***' // Never return CVV
+        cvv: "***", // Never return CVV
       }));
-      
+
       res.json({ success: true, cards: maskedCards });
     } catch (error) {
-      console.error('Error fetching test cards:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to fetch test cards' 
+      console.error("Error fetching test cards:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch test cards",
       });
     }
   }
@@ -51,7 +49,7 @@ export class PaymentController {
       if (!cardId || !subscriptionId || !amount) {
         return res.status(400).json({
           success: false,
-          error: 'Missing required fields: cardId, subscriptionId, amount'
+          error: "Missing required fields: cardId, subscriptionId, amount",
         });
       }
 
@@ -59,8 +57,8 @@ export class PaymentController {
       const result = await SimulatedPaymentService.processPayment(
         cardId,
         amount,
-        'subscription',
-        description || 'Subscription payment',
+        "subscription",
+        description || "Subscription payment",
         subscriptionId
       );
 
@@ -68,10 +66,10 @@ export class PaymentController {
       if (result.success) {
         await prisma.subscription.update({
           where: { id: subscriptionId },
-          data: { 
-            status: 'active',
-            updatedAt: new Date()
-          }
+          data: {
+            status: "active",
+            updatedAt: new Date(),
+          },
         });
       }
 
@@ -80,16 +78,15 @@ export class PaymentController {
         success: result.success,
         paymentId: result.paymentId,
         error: result.error,
-        message: result.success 
-          ? 'Payment processed successfully' 
-          : `Payment failed: ${result.error}`
+        message: result.success
+          ? "Payment processed successfully"
+          : `Payment failed: ${result.error}`,
       });
-
     } catch (error) {
-      console.error('Error processing subscription payment:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Payment processing failed' 
+      console.error("Error processing subscription payment:", error);
+      res.status(500).json({
+        success: false,
+        error: "Payment processing failed",
       });
     }
   }
@@ -102,15 +99,15 @@ export class PaymentController {
       if (!cardId || !gearOrderId || !amount) {
         return res.status(400).json({
           success: false,
-          error: 'Missing required fields: cardId, gearOrderId, amount'
+          error: "Missing required fields: cardId, gearOrderId, amount",
         });
       }
 
       const result = await SimulatedPaymentService.processPayment(
         cardId,
         amount,
-        'gear',
-        description || 'Equipment purchase',
+        "gear",
+        description || "Equipment purchase",
         undefined,
         gearOrderId
       );
@@ -119,10 +116,10 @@ export class PaymentController {
       if (result.success) {
         await prisma.gearOrder.update({
           where: { id: gearOrderId },
-          data: { 
-            status: 'paid',
-            updatedAt: new Date()
-          }
+          data: {
+            status: "paid",
+            updatedAt: new Date(),
+          },
         });
       }
 
@@ -131,16 +128,15 @@ export class PaymentController {
         success: result.success,
         paymentId: result.paymentId,
         error: result.error,
-        message: result.success 
-          ? 'Payment processed successfully' 
-          : `Payment failed: ${result.error}`
+        message: result.success
+          ? "Payment processed successfully"
+          : `Payment failed: ${result.error}`,
       });
-
     } catch (error) {
-      console.error('Error processing gear payment:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Payment processing failed' 
+      console.error("Error processing gear payment:", error);
+      res.status(500).json({
+        success: false,
+        error: "Payment processing failed",
       });
     }
   }
@@ -149,18 +145,18 @@ export class PaymentController {
   static async validateCard(req: Request, res: Response) {
     try {
       const cardData: SimulatedCardData = req.body;
-      
+
       const validation = SimulatedPaymentService.validateCard(cardData);
-      
+
       res.json({
         success: validation.valid,
-        error: validation.error
+        error: validation.error,
       });
     } catch (error) {
-      console.error('Error validating card:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Card validation failed' 
+      console.error("Error validating card:", error);
+      res.status(500).json({
+        success: false,
+        error: "Card validation failed",
       });
     }
   }
@@ -169,31 +165,40 @@ export class PaymentController {
   static async getPaymentStatus(req: Request, res: Response) {
     try {
       const { paymentId } = req.params;
-      
-      const payment = await SimulatedPaymentService.getPayment(parseInt(paymentId));
-      
+
+      const payment = await SimulatedPaymentService.getPayment(
+        parseInt(paymentId)
+      );
+
       if (!payment) {
         return res.status(404).json({
           success: false,
-          error: 'Payment not found'
+          error: "Payment not found",
         });
       }
 
-      res.json({ 
-        success: true, 
-        status: payment.status,
+      // Normalize status for frontend compatibility ('succeeded' -> 'success')
+      const normalizedStatus =
+        payment.status === "succeeded" ? "success" : payment.status;
+      res.json({
+        success: true,
+        status: normalizedStatus,
         paymentId: payment.id,
         amount: payment.amount,
-        message: payment.status === 'succeeded' ? 'Payment completed successfully' :
-                payment.status === 'failed' ? 'Payment failed - insufficient funds or invalid card' :
-                payment.status === 'pending' ? 'Payment is being processed' :
-                `Payment status: ${payment.status}`
+        message:
+          normalizedStatus === "success"
+            ? "Payment completed successfully"
+            : normalizedStatus === "failed"
+            ? "Payment failed - insufficient funds or invalid card"
+            : normalizedStatus === "pending"
+            ? "Payment is being processed"
+            : `Payment status: ${normalizedStatus}`,
       });
     } catch (error) {
-      console.error('Error fetching payment status:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to fetch payment status' 
+      console.error("Error fetching payment status:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch payment status",
       });
     }
   }
@@ -202,13 +207,15 @@ export class PaymentController {
   static async getPayment(req: Request, res: Response) {
     try {
       const { paymentId } = req.params;
-      
-      const payment = await SimulatedPaymentService.getPayment(parseInt(paymentId));
-      
+
+      const payment = await SimulatedPaymentService.getPayment(
+        parseInt(paymentId)
+      );
+
       if (!payment) {
         return res.status(404).json({
           success: false,
-          error: 'Payment not found'
+          error: "Payment not found",
         });
       }
 
@@ -217,16 +224,16 @@ export class PaymentController {
         ...payment,
         card: {
           ...payment.card,
-          cardNumber: `****-****-****-${payment.card.cardNumber.slice(-4)}`
-        }
+          cardNumber: `****-****-****-${payment.card.cardNumber.slice(-4)}`,
+        },
       };
 
       res.json({ success: true, payment: maskedPayment });
     } catch (error) {
-      console.error('Error fetching payment:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to fetch payment details' 
+      console.error("Error fetching payment:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch payment details",
       });
     }
   }
@@ -235,27 +242,27 @@ export class PaymentController {
   static async getOrderPayments(req: Request, res: Response) {
     try {
       const { subscriptionId, gearOrderId } = req.query;
-      
+
       const payments = await SimulatedPaymentService.getPaymentsForOrder(
         subscriptionId ? parseInt(subscriptionId as string) : undefined,
         gearOrderId ? parseInt(gearOrderId as string) : undefined
       );
 
       // Mask sensitive card details
-      const maskedPayments = payments.map(payment => ({
+      const maskedPayments = payments.map((payment) => ({
         ...payment,
         card: {
           ...payment.card,
-          cardNumber: `****-****-****-${payment.card.cardNumber.slice(-4)}`
-        }
+          cardNumber: `****-****-****-${payment.card.cardNumber.slice(-4)}`,
+        },
       }));
 
       res.json({ success: true, payments: maskedPayments });
     } catch (error) {
-      console.error('Error fetching order payments:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to fetch payment history' 
+      console.error("Error fetching order payments:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch payment history",
       });
     }
   }
@@ -265,7 +272,7 @@ export class PaymentController {
     try {
       const { paymentId } = req.params;
       const { amount } = req.body;
-      
+
       const result = await SimulatedPaymentService.refundPayment(
         parseInt(paymentId),
         amount
@@ -276,16 +283,15 @@ export class PaymentController {
         success: result.success,
         refundId: result.paymentId,
         error: result.error,
-        message: result.success 
-          ? 'Refund processed successfully' 
-          : `Refund failed: ${result.error}`
+        message: result.success
+          ? "Refund processed successfully"
+          : `Refund failed: ${result.error}`,
       });
-
     } catch (error) {
-      console.error('Error processing refund:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Refund processing failed' 
+      console.error("Error processing refund:", error);
+      res.status(500).json({
+        success: false,
+        error: "Refund processing failed",
       });
     }
   }
@@ -294,26 +300,26 @@ export class PaymentController {
   static async getPaymentStatistics(req: Request, res: Response) {
     try {
       const stats = await prisma.simulatedPayment.groupBy({
-        by: ['status', 'paymentType'],
+        by: ["status", "paymentType"],
         _count: {
-          id: true
+          id: true,
         },
         _sum: {
-          amount: true
-        }
+          amount: true,
+        },
       });
 
       const totalTransactions = await prisma.simulatedPayment.count();
       const totalRevenue = await prisma.simulatedPayment.aggregate({
         _sum: {
-          amount: true
+          amount: true,
         },
         where: {
-          status: 'succeeded',
+          status: "succeeded",
           amount: {
-            gt: 0 // Exclude refunds
-          }
-        }
+            gt: 0, // Exclude refunds
+          },
+        },
       });
 
       res.json({
@@ -321,14 +327,14 @@ export class PaymentController {
         statistics: {
           totalTransactions,
           totalRevenue: totalRevenue._sum.amount || 0,
-          breakdown: stats
-        }
+          breakdown: stats,
+        },
       });
     } catch (error) {
-      console.error('Error fetching payment statistics:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to fetch payment statistics' 
+      console.error("Error fetching payment statistics:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch payment statistics",
       });
     }
   }
